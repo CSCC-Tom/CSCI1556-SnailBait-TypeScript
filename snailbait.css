@@ -1,30 +1,83 @@
 body {
-   /* Background from CSS3 Patterns Gallery by Anna Kassner */
+  /* Background from CSS3 Patterns Gallery by Anna Kassner */
 
-   background-color: #6d6aff;
+  background-color: #6d6aff;
 
-   background-image:
-      -webkit-repeating-linear-gradient(120deg, rgba(255,255,255,.1), rgba(255,255,255,.1) 1px, transparent 1px, transparent 60px),
-      -webkit-repeating-linear-gradient(60deg, rgba(255,255,255,.1), rgba(255,255,255,.1) 1px, transparent 1px, transparent 60px),
-      -webkit-linear-gradient(60deg, rgba(0,0,0,.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,.1) 75%, rgba(0,0,0,.1)),
-      -webkit-linear-gradient(120deg, rgba(0,0,0,.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,.1) 75%, rgba(0,0,0,.1));
+  background-image: -webkit-repeating-linear-gradient(
+      120deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.1) 1px,
+      transparent 1px,
+      transparent 60px
+    ),
+    -webkit-repeating-linear-gradient(60deg, rgba(255, 255, 255, 0.1), rgba(
+            255,
+            255,
+            255,
+            0.1
+          )
+          1px, transparent 1px, transparent 60px),
+    -webkit-linear-gradient(60deg, rgba(0, 0, 0, 0.1) 25%, transparent 25%, transparent
+          75%, rgba(0, 0, 0, 0.1) 75%, rgba(0, 0, 0, 0.1)),
+    -webkit-linear-gradient(120deg, rgba(0, 0, 0, 0.1) 25%, transparent 25%, transparent
+          75%, rgba(0, 0, 0, 0.1) 75%, rgba(0, 0, 0, 0.1));
 
-   background-image:
-      repeating-linear-gradient(120deg, rgba(255,255,255,.1), rgba(255,255,255,.1) 1px, transparent 1px, transparent 60px),
-      repeating-linear-gradient(60deg, rgba(255,255,255,.1), rgba(255,255,255,.1) 1px, transparent 1px, transparent 60px),
-      linear-gradient(60deg, rgba(0,0,0,.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,.1) 75%, rgba(0,0,0,.1)),
-      linear-gradient(120deg, rgba(0,0,0,.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,.1) 75%, rgba(0,0,0,.1));
+  background-image: repeating-linear-gradient(
+      120deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.1) 1px,
+      transparent 1px,
+      transparent 60px
+    ),
+    repeating-linear-gradient(
+      60deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.1) 1px,
+      transparent 1px,
+      transparent 60px
+    ),
+    linear-gradient(
+      60deg,
+      rgba(0, 0, 0, 0.1) 25%,
+      transparent 25%,
+      transparent 75%,
+      rgba(0, 0, 0, 0.1) 75%,
+      rgba(0, 0, 0, 0.1)
+    ),
+    linear-gradient(
+      120deg,
+      rgba(0, 0, 0, 0.1) 25%,
+      transparent 25%,
+      transparent 75%,
+      rgba(0, 0, 0, 0.1) 75%,
+      rgba(0, 0, 0, 0.1)
+    );
 
-   background-size: 70px 120px;
+  background-size: 70px 120px;
 }
 
 #arena {
-   margin: 0 auto;
-   margin-top: 50px;
-   width: 800px;
-   height: 400px;
+  margin: 0 auto;
+  width: 802px;
+  height: 520px;
 }
 
 #game-canvas {
-   border: 1.5px solid blue; 
+  border: 1.5px solid blue;
+}
+
+#score {
+  font: 46px fantasy;
+  text-align: center;
+  color: #ff0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 80, 1);
+}
+
+#fps {
+  position: absolute;
+  margin-top: -2em;
+  z-index: 1;
+  color: yellow;
+  text-shadow: 1px 1px 1px rgb(0, 0, 80);
+  font: bold 20px fantasy;
 }
