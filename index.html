@@ -1,12 +1,28 @@
 <!DOCTYPE html>
 <html>
+  <!-- Head.........................................................-->
+
   <head>
     <title>Snail Bait</title>
     <link rel="stylesheet" href="snailbait.css" />
   </head>
 
+  <!-- Body.........................................................-->
+
   <body>
+    <!-- Arena.....................................................-->
+
     <div id="arena">
+      <!-- Score and fps..........................................-->
+
+      <div id="score">0</div>
+      <div id="fps"></div>
+
+      <!-- Toast..................................................-->
+      <div id="toast"></div>
+
+      <!-- The game canvas........................................-->
+
       <canvas id="game-canvas" width="800" height="400">
         Your browser does not support HTML5 Canvas.
       </canvas>
@@ -14,6 +30,6 @@
 
     <!-- JavaScript................................................-->
 
-    <script src="_compiled/snailbait.js"></script>
+    <script src="_compiled/bundle.js"></script>
   </body>
 </html>

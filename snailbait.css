@@ -81,3 +81,17 @@ body {
   text-shadow: 1px 1px 1px rgb(0, 0, 80);
   font: bold 20px fantasy;
 }
+
+#toast {
+  position: absolute;
+  margin-left: 100px;
+  margin-top: 20px;
+  width: 600px;
+  font: 40px fantasy;
+  text-align: center;
+  color: #ff6;
+  text-shadow: 2px 2px 4px rgb(0, 0, 0);
+
+  display: none;
+  z-index: 1;
+}
