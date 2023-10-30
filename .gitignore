@@ -1,0 +1,5 @@
+.vs/
+.vscode/
+_compiled/
+node_modules/
+package-lock.json
