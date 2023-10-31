@@ -64,6 +64,14 @@ body {
 
 #game-canvas {
   border: 1.5px solid blue;
+
+  -webkit-transition: opacity 5s;
+  -moz-transition: opacity 5s;
+  -o-transition: opacity 5s;
+  transition: opacity 5s;
+
+  opacity: 0;
+  display: none;
 }
 
 #score {
@@ -71,6 +79,15 @@ body {
   text-align: center;
   color: #ff0;
   text-shadow: 2px 2px 4px rgba(0, 0, 80, 1);
+
+  -webkit-transition: opacity 5s;
+  -moz-transition: opacity 5s;
+  -o-transition: opacity 5s;
+  transition: opacity 5s;
+
+  opacity: 0;
+  display: none;
+  z-index: 1;
 }
 
 #fps {
@@ -80,6 +97,15 @@ body {
   color: yellow;
   text-shadow: 1px 1px 1px rgb(0, 0, 80);
   font: bold 20px fantasy;
+
+  -webkit-transition: opacity 5s;
+  -moz-transition: opacity 5s;
+  -o-transition: opacity 5s;
+  transition: opacity 5s;
+
+  opacity: 0;
+  display: none;
+  z-index: 1;
 }
 
 #toast {
@@ -92,6 +118,202 @@ body {
   color: #ff6;
   text-shadow: 2px 2px 4px rgb(0, 0, 0);
 
+  -webkit-transition: opacity 0.5s;
+  -moz-transition: opacity 0.5s;
+  -o-transition: opacity 0.5s;
+  transition: opacity 0.5s;
+
+  opacity: 0;
   display: none;
   z-index: 1;
+}
+
+#instructions {
+  margin-left: 155px;
+  padding-left: 5px;
+  padding-top: 10px;
+  height: 2em;
+
+  color: #ff0;
+  font-size: 0.95em;
+
+  -webkit-transition: opacity 5s;
+  -moz-transition: opacity 5s;
+  -o-transition: opacity 5s;
+  transition: opacity 5s;
+
+  display: none;
+  opacity: 0;
+}
+
+.keys {
+  color: blue;
+  text-shadow: 1px 1px 1px rgba(255, 255, 0, 0.5);
+  background: rgba(0, 0, 0, 0.1);
+  border: thin solid rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+  margin-left: 10px;
+  padding-right: 5px;
+  padding-left: 5px;
+  padding-bottom: 5px;
+
+  display: inline;
+}
+
+.explanation {
+  color: #ff0;
+  text-shadow: 1px 1px 1px rgba(0, 0, 200, 0.5);
+  display: inline;
+  margin-top: 5px;
+  padding-right: 5px;
+  padding-left: 5px;
+  padding-bottom: 2px;
+}
+
+#copyright {
+  float: right;
+  margin-right: 2px;
+  margin-top: -2.3em;
+  padding: 2px;
+  color: blue;
+  text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.5);
+  font-size: 0.85em;
+
+  -webkit-transition: opacity 5s;
+  -moz-transition: opacity 5s;
+  -o-transition: opacity 5s;
+  transition: opacity 5s;
+
+  display: none;
+  opacity: 0;
+}
+
+#sound-and-music {
+  position: absolute;
+  margin-left: 5px;
+  margin-top: 9px;
+  color: #ff0;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  border: thin solid rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+
+  -webkit-transition: opacity 5s;
+  -moz-transition: opacity 5s;
+  -o-transition: opacity 5s;
+  transition: opacity 5s;
+
+  font-size: 0.9em;
+  opacity: 0;
+  display: none;
+}
+
+.checkbox-div {
+  display: inline;
+  text-shadow: 1px 1px 1px blue;
+}
+
+#sound-checkbox-div {
+  margin-right: 10px;
+}
+
+#loading {
+  position: absolute;
+  margin-top: 80px;
+  width: 790px;
+  font: 55px fantasy;
+  text-align: center;
+
+  -webkit-transition: opacity 2s;
+  -moz-transition: opacity 2s;
+  -o-transition: opacity 2s;
+  transition: opacity 2s;
+}
+
+#loading-title {
+  padding-left: 40px;
+  padding-bottom: 30px;
+  color: #ff6;
+  text-shadow: 2px 2px 4px rgb(0, 0, 0);
+
+  -webkit-transition: opacity 2s;
+  -moz-transition: opacity 2s;
+  -o-transition: opacity 2s;
+  transition: opacity 2s;
+
+  opacity: 0;
+  display: none;
+}
+
+#loading-animated-gif {
+  margin: 0 auto;
+  border: thin solid rgba(0, 0, 255, 0.7);
+  border-radius: 60px 60px 60px;
+  padding: 40px;
+  margin-top: 10px;
+
+  /* Radial gradient generated at http://www.colorzilla.com/gradient-editor */
+
+  background: -moz-radial-gradient(
+    center,
+    ellipse cover,
+    #f2f6f8 0%,
+    #d8e1e7 50%,
+    #b5c6d0 51%,
+    #e0eff9 100%
+  );
+  background: -webkit-gradient(
+    radial,
+    center center,
+    0px,
+    center center,
+    100%,
+    color-stop(0%, #f2f6f8),
+    color-stop(50%, #d8e1e7),
+    color-stop(51%, #b5c6d0),
+    color-stop(100%, #e0eff9)
+  );
+  background: -webkit-radial-gradient(
+    center,
+    ellipse cover,
+    #f2f6f8 0%,
+    #d8e1e7 50%,
+    #b5c6d0 51%,
+    #e0eff9 100%
+  );
+  background: -o-radial-gradient(
+    center,
+    ellipse cover,
+    #f2f6f8 0%,
+    #d8e1e7 50%,
+    #b5c6d0 51%,
+    #e0eff9 100%
+  );
+  background: -ms-radial-gradient(
+    center,
+    ellipse cover,
+    #f2f6f8 0%,
+    #d8e1e7 50%,
+    #b5c6d0 51%,
+    #e0eff9 100%
+  );
+  background: radial-gradient(
+    ellipse at center,
+    #f2f6f8 0%,
+    #d8e1e7 50%,
+    #b5c6d0 51%,
+    #e0eff9 100%
+  );
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f2f6f8', endColorstr='#e0eff9',GradientType=1 );
+
+  -webkit-transition: opacity 2s;
+  -moz-transition: opacity 2s;
+  -o-transition: opacity 2s;
+  transition: opacity 2s;
+
+  opacity: 0;
+  display: none;
 }

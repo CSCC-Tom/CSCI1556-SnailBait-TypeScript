@@ -19,14 +19,27 @@ class SnailBait {
   // Constants............................................................
   private readonly LEFT = 1;
   private readonly RIGHT = 2;
-  private readonly TRANSPARENT = 0;
-  private readonly OPAQUE = 1.0;
+  private readonly SHORT_DELAY = 50; // milliseconds
+  private readonly TRANSPARENT = "0";
+  private readonly OPAQUE = "1.0";
   private readonly BACKGROUND_VELOCITY = 42;
   private readonly PLATFORM_HEIGHT = 8;
   private readonly PLATFORM_STROKE_WIDTH = 2;
   private readonly PLATFORM_STROKE_STYLE = "rgb(0,0,0)"; // black
   private readonly RUNNER_LEFT = 50;
   private readonly STARTING_RUNNER_TRACK: PlatformTrack = 1;
+
+  // Loading screen....................................................
+
+  private loadingElement: HTMLCanvasElement = document.getElementById(
+    "loading"
+  ) as HTMLCanvasElement;
+  private loadingTitleElement: HTMLCanvasElement = document.getElementById(
+    "loading-title"
+  ) as HTMLCanvasElement;
+  private runnerAnimatedGIFElement: HTMLImageElement = document.getElementById(
+    "loading-animated-gif"
+  ) as HTMLImageElement;
 
   // Track baselines...................................................
   private TRACK_1_BASELINE = 323;
@@ -48,7 +61,7 @@ class SnailBait {
   private readonly PAUSED_CHECK_INTERVAL = 200;
   private windowHasFocus = true;
   private countdownInProgress = false;
-
+  private gameStarted = false;
   // Images............................................................
   private background = new Image();
   private runnerImage = new Image();
@@ -57,8 +70,7 @@ class SnailBait {
   private lastAnimationFrameTime = 0;
   private lastFpsUpdateTime = 0;
   private fps = 60;
-
-  // Fps indicator.....................................................
+  // Fps...............................................................
   private fpsElement: HTMLCanvasElement = document.getElementById(
     "fps"
   ) as HTMLCanvasElement;
@@ -66,6 +78,30 @@ class SnailBait {
   // Toast.............................................................
   private toastElement: HTMLCanvasElement = document.getElementById(
     "toast"
+  ) as HTMLCanvasElement;
+
+  // Instructions......................................................
+
+  private instructionsElement: HTMLCanvasElement = document.getElementById(
+    "instructions"
+  ) as HTMLCanvasElement;
+
+  // Copyright.........................................................
+
+  private copyrightElement: HTMLCanvasElement = document.getElementById(
+    "copyright"
+  ) as HTMLCanvasElement;
+
+  // Score.............................................................
+
+  private scoreElement: HTMLCanvasElement = document.getElementById(
+    "score"
+  ) as HTMLCanvasElement;
+
+  // Sound and music...................................................
+
+  private soundAndMusicElement: HTMLCanvasElement = document.getElementById(
+    "sound-and-music"
   ) as HTMLCanvasElement;
 
   // Runner track......................................................
@@ -352,21 +388,59 @@ class SnailBait {
   private turnRight = () => {
     this.bgVelocity = this.BACKGROUND_VELOCITY;
   };
-
+  private waitABit = async (msToWait: number): Promise<void> => {
+    await new Promise((resolve) => setTimeout(resolve, msToWait));
+  };
+  private fadeInElements = async (
+    fadeDuration: number,
+    args: (HTMLCanvasElement | HTMLImageElement)[]
+  ): Promise<void> => {
+    let timeElapsed = 0.0;
+    while (timeElapsed < fadeDuration) {
+      for (let i = 0; i < args.length; i++) {
+        args[i].style.display = "block";
+        args[i].style.opacity = `${timeElapsed / fadeDuration}`;
+      }
+      await this.waitABit(100);
+      timeElapsed += 100;
+    }
+    for (let i = 0; i < args.length; i++) {
+      args[i].style.opacity = this.OPAQUE;
+    }
+  };
+  private fadeOutElements = async (
+    fadeDuration: number,
+    args: (HTMLCanvasElement | HTMLImageElement)[]
+  ): Promise<void> => {
+    // FORMER LOGIC const fadeDuration = args[args.length - 1]; // Last argument
+    let timeElapsed = 0.0;
+    while (timeElapsed < fadeDuration) {
+      for (let i = 0; i < args.length; i++) {
+        args[i].style.opacity = `${1.0 - timeElapsed / fadeDuration}`;
+      }
+      await this.waitABit(100);
+      timeElapsed += 100;
+    }
+    for (let i = 0; i < args.length; i++) {
+      args[i].style.display = "none";
+      args[i].style.opacity = this.TRANSPARENT;
+    }
+  };
+  private hideToast = () => {
+    const TOAST_TRANSITION_DURATION = 450;
+    this.fadeOutElements(TOAST_TRANSITION_DURATION, [this.toastElement]);
+  };
+  private startToastTransition = (text: string, duration: number) => {
+    this.toastElement.innerHTML = text;
+    this.fadeInElements(duration, [this.toastElement]);
+  };
   private revealToast = (text: string, duration: number) => {
     const DEFAULT_TOAST_DISPLAY_DURATION = 1000;
 
     duration = duration || DEFAULT_TOAST_DISPLAY_DURATION;
 
-    this.toastElement.style.display = "block";
-    this.toastElement.innerHTML = text;
-
+    this.startToastTransition(text, duration);
     setTimeout(this.hideToast, duration);
-  };
-  private hideToast = () => {
-    if (this.windowHasFocus) {
-      this.toastElement.style.display = "none";
-    }
   };
 
   // Animation............................................................
@@ -397,12 +471,86 @@ class SnailBait {
   };
 
   // ------------------------- INITIALIZATION ----------------------------
+  private backgroundLoaded = () => {
+    const LOADING_SCREEN_TRANSITION_DURATION = 2000;
 
+    this.fadeOutElements(LOADING_SCREEN_TRANSITION_DURATION, [
+      this.loadingElement,
+    ]);
+
+    setTimeout(function () {
+      snailBait.startGame();
+      snailBait.gameStarted = true;
+    }, LOADING_SCREEN_TRANSITION_DURATION);
+  };
+  private loadingAnimationLoaded = () => {
+    this.fadeInElements(this.SHORT_DELAY, [
+      this.runnerAnimatedGIFElement,
+      this.loadingTitleElement,
+    ]);
+  };
   public initializeImages = () => {
     this.background.src = "images/background.png";
     this.runnerImage.src = "images/runner.png";
+    this.runnerAnimatedGIFElement.src = "images/snail.gif";
 
-    this.background.onload = this.startGame;
+    this.background.onload = this.backgroundLoaded;
+    this.runnerAnimatedGIFElement.onload = this.loadingAnimationLoaded;
+  };
+
+  private dimControls = () => {
+    const FINAL_OPACITY = "0.5";
+
+    snailBait.instructionsElement.style.opacity = FINAL_OPACITY;
+    snailBait.soundAndMusicElement.style.opacity = FINAL_OPACITY;
+  };
+  private revealCanvas = () => {
+    this.fadeInElements(this.SHORT_DELAY, [this.canvas]);
+  };
+  private revealTopChrome = () => {
+    this.fadeInElements(this.SHORT_DELAY, [this.fpsElement, this.scoreElement]);
+  };
+  private revealTopChromeDimmed = () => {
+    const DIM = "0.25";
+
+    this.scoreElement.style.display = "block";
+    this.fpsElement.style.display = "block";
+
+    setTimeout(function () {
+      snailBait.scoreElement.style.opacity = DIM;
+      snailBait.fpsElement.style.opacity = DIM;
+    }, this.SHORT_DELAY);
+  };
+  private revealBottomChrome = () => {
+    this.fadeInElements(this.SHORT_DELAY, [
+      this.soundAndMusicElement,
+      this.instructionsElement,
+      this.copyrightElement,
+    ]);
+  };
+  private finishRevealingGame = () => {
+    this.dimControls();
+    this.revealTopChrome();
+  };
+  private revealGame = () => {
+    const DIM_CONTROLS_DELAY = 5000;
+
+    this.revealTopChromeDimmed();
+    this.revealCanvas();
+    this.revealBottomChrome();
+
+    setTimeout(this.finishRevealingGame, DIM_CONTROLS_DELAY);
+  };
+  private finishRevealingInitialToast = () => {
+    const INITIAL_TOAST_DURATION = 3000;
+    this.revealToast(
+      "Collide with coins and jewels. " + "Avoid bats and bees.",
+      INITIAL_TOAST_DURATION
+    );
+  };
+  private revealInitialToast = () => {
+    const INITIAL_TOAST_DELAY = 1500;
+    setTimeout(this.finishRevealingInitialToast, INITIAL_TOAST_DELAY);
   };
 
   private onKeyDownEvent = (e: KeyboardEvent) => {
@@ -431,52 +579,48 @@ class SnailBait {
   };
 
   private onWindowFocusEvent = (e: FocusEvent) => {
-    const DIGIT_DISPLAY_DURATION = 1000; // milliseconds
-
     this.windowHasFocus = true;
     this.countdownInProgress = true;
 
     if (this.paused) {
-      this.toastElement.style.font = "128px fantasy"; // Large font
+      this.countdownToastSequence();
+    }
+  };
+  private countdownToastSequence = async (): Promise<void> => {
+    const DIGIT_DISPLAY_DURATION = 1000; // milliseconds
+    const originalFont = this.toastElement.style.fontSize;
+    this.toastElement.style.font = "128px fantasy"; // Large font
 
-      if (this.windowHasFocus && this.countdownInProgress)
-        this.revealToast("3", 1000); // Display 3 for 1.0 seconds
+    if (this.windowHasFocus && this.countdownInProgress)
+      this.revealToast("3", 500); // Display 3 for 0.5 seconds
 
-      setTimeout(this.onCountdownToggle2, DIGIT_DISPLAY_DURATION);
+    await this.waitABit(DIGIT_DISPLAY_DURATION);
+
+    if (this.windowHasFocus && this.countdownInProgress)
+      this.revealToast("2", 500); // Display 2 for 0.5 seconds
+
+    await this.waitABit(DIGIT_DISPLAY_DURATION);
+
+    if (this.windowHasFocus && this.countdownInProgress)
+      this.revealToast("1", 500); // Display 1 for 0.5 seconds
+
+    await this.waitABit(DIGIT_DISPLAY_DURATION);
+
+    if (this.windowHasFocus && this.countdownInProgress) {
+      this.togglePaused();
+      this.toastElement.style.fontSize = originalFont;
+      this.hideToast();
+      this.countdownInProgress = false;
     }
   };
 
-  private onCountdownToggle2 = () => {
-    const DIGIT_DISPLAY_DURATION = 1000; // milliseconds
-    if (this.windowHasFocus && this.countdownInProgress)
-      this.revealToast("2", 1000); // Display 2 for 1.0 seconds
-
-    setTimeout(this.onCountdownToggle1, DIGIT_DISPLAY_DURATION);
-  };
-  private onCountdownToggle1 = () => {
-    const DIGIT_DISPLAY_DURATION = 1000; // milliseconds
-    if (this.windowHasFocus && this.countdownInProgress)
-      this.revealToast("1", 1000); // Display 1 for 1.0 seconds
-
-    setTimeout(this.onCountdownToggleFinish, DIGIT_DISPLAY_DURATION);
-  };
-  private onCountdownToggleFinish = () => {
-    let originalFont = this.toastElement.style.fontSize;
-    if (this.windowHasFocus && this.countdownInProgress) this.togglePaused();
-
-    if (this.windowHasFocus && this.countdownInProgress)
-      this.toastElement.style.fontSize = originalFont;
-
-    this.countdownInProgress = false;
-  };
-
   private startGame = () => {
-    window.requestAnimationFrame(this.animate);
     window.addEventListener("keydown", this.onKeyDownEvent);
-
     window.addEventListener("blur", this.onWindowBlurEvent);
-
     window.addEventListener("focus", this.onWindowFocusEvent);
+    this.revealGame();
+    this.revealInitialToast();
+    window.requestAnimationFrame(this.animate);
   };
 
   // Event handlers.......................................................
@@ -484,4 +628,5 @@ class SnailBait {
 
 // Launch game.........................................................
 const snailBait = new SnailBait();
+
 snailBait.initializeImages();

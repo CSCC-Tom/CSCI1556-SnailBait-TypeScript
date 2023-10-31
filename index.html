@@ -19,13 +19,59 @@
       <div id="fps"></div>
 
       <!-- Toast..................................................-->
+
       <div id="toast"></div>
+
+      <!-- Loading screen........................................-->
+
+      <div id="loading">
+        <div id="loading-title">Loading...</div>
+        <img id="loading-animated-gif" />
+        <!-- no src attribute -->
+      </div>
 
       <!-- The game canvas........................................-->
 
       <canvas id="game-canvas" width="800" height="400">
         Your browser does not support HTML5 Canvas.
       </canvas>
+
+      <!-- Sound and music.....................................-->
+
+      <div id="sound-and-music">
+        <div id="sound-checkbox-div" class="checkbox-div">
+          Sound <input id="sound-checkbox" type="checkbox" checked />
+        </div>
+
+        <div class="checkbox-div">
+          Music <input id="music-checkbox" type="checkbox" checked />
+        </div>
+      </div>
+
+      <!-- Instructions........................................-->
+
+      <div id="instructions">
+        <div class="keys">
+          &larr; / d
+          <div class="explanation">move left</div>
+          &rarr; / k
+          <div class="explanation">move right</div>
+        </div>
+
+        <div class="keys">
+          j / f / spacebar
+          <div class="explanation">jump</div>
+        </div>
+
+        <div class="keys">
+          p
+          <div class="explanation">pause</div>
+        </div>
+      </div>
+
+      <!-- Copyright...........................................-->
+
+      <div id="copyright">&copy; 2012 David Geary</div>
     </div>
 
     <!-- JavaScript................................................-->
