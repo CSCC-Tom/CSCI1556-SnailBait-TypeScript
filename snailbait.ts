@@ -335,7 +335,7 @@ class SnailBait {
   };
 
   private drawPlatform = (data: PlatformObject) => {
-    let platformTop = this.calculatePlatformTop(data.track);
+    const platformTop = this.calculatePlatformTop(data.track);
 
     this.context.lineWidth = this.PLATFORM_STROKE_WIDTH;
     this.context.strokeStyle = this.PLATFORM_STROKE_STYLE;
@@ -359,7 +359,7 @@ class SnailBait {
   };
 
   private calculateFps = (now: number) => {
-    let fps = (1 / (now - this.lastAnimationFrameTime)) * 1000;
+    const fps = (1 / (now - this.lastAnimationFrameTime)) * 1000;
 
     if (now - this.lastFpsUpdateTime > 1000) {
       this.lastFpsUpdateTime = now;
@@ -444,12 +444,13 @@ class SnailBait {
   };
 
   // Animation............................................................
+  private pausedReanimateCheck = async () => {
+    await this.waitABit(this.PAUSED_CHECK_INTERVAL);
+    window.requestAnimationFrame(this.animate);
+  };
   private animate = (now: number) => {
     if (this.paused) {
-      const self = this;
-      setTimeout(function () {
-        window.requestAnimationFrame(self.animate);
-      }, self.PAUSED_CHECK_INTERVAL);
+      this.pausedReanimateCheck();
     } else {
       this.fps = this.calculateFps(now);
       this.draw(now);
@@ -459,7 +460,7 @@ class SnailBait {
   };
 
   private togglePaused = () => {
-    let now = +new Date();
+    const now = +new Date();
 
     this.paused = !this.paused;
 
@@ -570,7 +571,7 @@ class SnailBait {
     }
   };
 
-  private onWindowBlurEvent = (e: FocusEvent) => {
+  private onWindowBlurEvent = (/*e: FocusEvent*/) => {
     this.windowHasFocus = false;
 
     if (!this.paused) {
@@ -578,7 +579,7 @@ class SnailBait {
     }
   };
 
-  private onWindowFocusEvent = (e: FocusEvent) => {
+  private onWindowFocusEvent = (/*e: FocusEvent*/) => {
     this.windowHasFocus = true;
     this.countdownInProgress = true;
 
