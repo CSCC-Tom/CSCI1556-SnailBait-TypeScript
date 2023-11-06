@@ -1,21 +1,30 @@
 import {
   Behavior,
   SpriteType,
-  ObjectCoordinates,
   PlatformObject,
   PlatformTrack,
+  RectObject,
+  RectBoundaries,
 } from "./definitions";
+import { SnailSprite } from "./sprites/snail";
+import { SnailBombSprite } from "./sprites/snailbomb";
+
+export enum SpriteDirection {
+  LEFT = 1,
+  RIGHT = 2,
+}
+
 // Sprite Artists......................................................
 
 // Artists draw sprites with a draw(sprite, context) method.
-export interface SpritesheetCell extends ObjectCoordinates {
-  width: number;
-  height: number;
-}
+export interface SpritesheetCell extends RectObject {}
 export class SpriteSheetArtist {
-  private cells: SpritesheetCell[];
+  public cells: SpritesheetCell[];
   private spritesheet: HTMLImageElement;
   private cellIndex = 0;
+  public GetCellIndex = () => {
+    return this.cellIndex;
+  };
   constructor(spritesheet: HTMLImageElement, cells: SpritesheetCell[]) {
     this.spritesheet = spritesheet;
     this.cells = cells;
@@ -55,9 +64,9 @@ export class Sprite {
   public static readonly DEFAULT_WIDTH = 10;
   public static readonly DEFAULT_HEIGHT = 10;
   public static readonly DEFAULT_OPACITY = 1.0;
-  private artist: SpriteSheetArtist;
+  public readonly artist: SpriteSheetArtist;
   public type: SpriteType;
-  private behaviors: Behavior[];
+  public behaviors: Behavior[];
   public hOffset = 0; // Horizontal offset
   public left = 0;
   public top = 0;
@@ -66,19 +75,30 @@ export class Sprite {
   public width = Sprite.DEFAULT_WIDTH;
   public height = Sprite.DEFAULT_HEIGHT;
   public velocityX = 0;
-  private velocityY = 0;
+  public velocityY = 0;
   public opacity = Sprite.DEFAULT_OPACITY;
   public visible = true;
   public value = 0;
+  public runAnimationRate = 0;
 
   public showCollisionRectangle = false;
 
-  private collisionMargin = {
+  public collisionMargin: RectBoundaries = {
     left: 0,
     right: 0,
     top: 0,
     bottom: 0,
   };
+
+  // BEHAVIORAL
+  public direction?: SpriteDirection;
+
+  // SNAIL-ONLY
+  // Snails maintain a reference to their bomb
+  public bomb?: SnailBombSprite;
+  // Snail bombs maintain a reference to their snail
+  public snail?: SnailSprite;
+
   constructor(
     type: SpriteType,
     artist: SpriteSheetArtist,

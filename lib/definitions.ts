@@ -44,6 +44,7 @@ export class PlatformSprite extends Sprite implements PlatformObject {
   public height: number;
   public button?: boolean;
   public pulsate?: boolean;
+  public snail = undefined;
   constructor(
     spritesheet: HTMLImageElement,
     artist: PlatformArtist,
@@ -83,6 +84,14 @@ export interface ObjectCoordinates {
   left: number;
   top: number;
 }
+export interface RectObject extends ObjectCoordinates {
+  width: number;
+  height: number;
+}
+export interface RectBoundaries extends ObjectCoordinates {
+  right: number;
+  bottom: number;
+}
 
 export type SpriteType =
   | "bat"
@@ -93,7 +102,8 @@ export type SpriteType =
   | "ruby"
   | "runner"
   | "sapphire"
-  | "snail";
+  | "snail"
+  | "snail bomb";
 
 export interface Behavior {
   execute: (

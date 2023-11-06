@@ -1,3 +1,8 @@
+import { CycleBehavior } from "./lib/behaviors/cycle";
+import { PaceBehavior } from "./lib/behaviors/pace";
+import { RunBehavior } from "./lib/behaviors/run";
+import { SnailBombMoveBehavior } from "./lib/behaviors/snailbombmove";
+import { SnailShootBehavior } from "./lib/behaviors/snailshoot";
 import {
   PlatformArtist,
   PlatformObject,
@@ -7,6 +12,8 @@ import {
   ObjectCoordinates,
 } from "./lib/definitions";
 import { Sprite, SpriteSheetArtist, SpritesheetCell } from "./lib/sprites";
+import { SnailSprite } from "./lib/sprites/snail";
+import { SnailBombSprite } from "./lib/sprites/snailbomb";
 class SnailBait {
   private canvas: HTMLCanvasElement = document.getElementById(
     "game-canvas"
@@ -14,12 +21,11 @@ class SnailBait {
   private context: CanvasRenderingContext2D;
 
   // Constants............................................................
-  private readonly LEFT = 1;
-  private readonly RIGHT = 2;
   private readonly SHORT_DELAY = 50; // milliseconds
   private readonly TRANSPARENT = "0";
   private readonly OPAQUE = "1.0";
   private readonly BACKGROUND_VELOCITY = 42;
+  private readonly RUN_ANIMATION_RATE = 30;
   private readonly PLATFORM_HEIGHT = 8;
   private readonly PLATFORM_STROKE_WIDTH = 2;
   private readonly PLATFORM_STROKE_STYLE = "rgb(0,0,0)"; // black
@@ -28,6 +34,11 @@ class SnailBait {
 
   private readonly BACKGROUND_WIDTH = 1102;
   private readonly BACKGROUND_HEIGHT = 400;
+
+  // Velocities........................................................
+
+  private readonly BUTTON_PACE_VELOCITY = 80;
+  private readonly SNAIL_PACE_VELOCITY = 50;
 
   // Loading screen....................................................
 
@@ -55,7 +66,6 @@ class SnailBait {
   private STARTING_PLATFORM_OFFSET = 0;
   private STARTING_BACKGROUND_OFFSET = 0;
   private STARTING_SPRITE_OFFSET = 0;
-  private STARTING_RUNNER_TRACK: PlatformTrack = 1;
   // States............................................................
   private paused = false;
   private pauseStartTime = 0;
@@ -105,7 +115,7 @@ class SnailBait {
   ) as HTMLCanvasElement;
 
   // Runner track......................................................
-  private runnerTrack: PlatformTrack;
+  private runnerTrack: PlatformTrack = 1;
 
   // Translation offsets...............................................
   private backgroundOffset: number;
@@ -115,8 +125,6 @@ class SnailBait {
   // Velocities........................................................
   private bgVelocity: number;
   private platformVelocity: number = 0;
-  private BUTTON_PACE_VELOCITY = 80;
-  private SNAIL_PACE_VELOCITY = 50;
 
   // Sprite sheet cells................................................
 
@@ -187,10 +195,7 @@ class SnailBait {
 
   private beeData: ObjectCoordinates[];
 
-  private buttonData: PlatformChild[] = [
-    { platformIndex: 7 },
-    { platformIndex: 12 },
-  ];
+  private buttonData: PlatformChild[];
 
   private coinData: ObjectCoordinates[];
 
@@ -203,7 +208,7 @@ class SnailBait {
 
   private smokingHoleData: ObjectCoordinates[];
 
-  private snailData: PlatformChild[] = [{ platformIndex: 13 }];
+  private snailData: PlatformChild[];
 
   // Sprites...........................................................
   private runner?: Sprite;
@@ -214,16 +219,21 @@ class SnailBait {
   private platforms: PlatformSprite[] = [];
   private rubies: Sprite[] = [];
   private sapphires: Sprite[] = [];
-  private snails: Sprite[] = [];
+  private snails: SnailSprite[] = [];
 
   private sprites: Sprite[] = []; // For convenience, contains all of the sprites
   // from the preceding arrays
+
+  // Special Behaviors .............................
+  private snailShootBehavior: SnailShootBehavior;
+  private snailBombMoveBehavior: SnailBombMoveBehavior;
+  private runBehavior: RunBehavior;
+  private paceBehavior: PaceBehavior;
 
   private platformArtist: PlatformArtist;
 
   constructor() {
     this.context = this.canvas.getContext("2d") as CanvasRenderingContext2D;
-    this.runnerTrack = this.STARTING_RUNNER_TRACK;
     this.backgroundOffset = this.STARTING_BACKGROUND_OFFSET;
     this.platformOffset = this.STARTING_PLATFORM_OFFSET;
     this.spriteOffset = this.STARTING_SPRITE_OFFSET;
@@ -263,7 +273,7 @@ class SnailBait {
 
       {
         left: 633,
-        width: 100,
+        width: 300,
         height: this.PLATFORM_HEIGHT,
         fillStyle: "rgb(80,140,230)",
         opacity: 1.0,
@@ -485,7 +495,7 @@ class SnailBait {
         height: this.BUTTON_CELLS_HEIGHT,
       },
     ];
-    this.rubyCells = [
+    this.sapphireCells = [
       {
         left: 3,
         top: 138,
@@ -559,7 +569,7 @@ class SnailBait {
 
       { left: 425, top: 305, width: 35, height: this.RUNNER_CELLS_HEIGHT },
     ];
-    this.sapphireCells = [
+    this.rubyCells = [
       {
         left: 185,
         top: 138,
@@ -648,6 +658,7 @@ class SnailBait {
       { left: 2295, top: 275 },
       { left: 2450, top: 275 },
     ];
+    this.buttonData = [{ platformIndex: 2 }, { platformIndex: 12 }];
     this.coinData = [
       { left: 270, top: this.TRACK_2_BASELINE - this.COIN_CELLS_HEIGHT },
 
@@ -674,7 +685,7 @@ class SnailBait {
       { left: 2360, top: this.TRACK_1_BASELINE - this.COIN_CELLS_HEIGHT },
     ];
     this.sapphireData = [
-      { left: 140, top: this.TRACK_1_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
+      { left: 70, top: this.TRACK_1_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
 
       { left: 880, top: this.TRACK_2_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
 
@@ -696,7 +707,26 @@ class SnailBait {
       { left: 688, top: this.TRACK_3_BASELINE + 5 },
       { left: 1352, top: this.TRACK_2_BASELINE - 18 },
     ];
+    this.snailData = [{ platformIndex: 3 }];
+    // Sprite artists....................................................
     this.platformArtist = new PlatformArtist(this.calculatePlatformTop);
+    // ------------------------Sprite behaviors-------------------------
+
+    // Pacing on platforms...............................................
+
+    this.runBehavior = new RunBehavior();
+
+    // Pacing on platforms...............................................
+
+    this.paceBehavior = new PaceBehavior();
+
+    // Snail shoot behavior..............................................
+
+    this.snailShootBehavior = new SnailShootBehavior(this.isSpriteInView);
+
+    // Move the snail bomb...............................................
+
+    this.snailBombMoveBehavior = new SnailBombMoveBehavior();
   }
 
   public createSprites = () => {
@@ -779,6 +809,7 @@ class SnailBait {
     this.positionSprites(this.rubies, this.rubyData);
     this.positionSprites(this.sapphires, this.sapphireData);
     this.positionSprites(this.snails, this.snailData);
+    this.armSnails();
   };
 
   private createBatSprites = () => {
@@ -819,7 +850,7 @@ class SnailBait {
         button = new Sprite(
           "button",
           new SpriteSheetArtist(this.spritesheet, this.blueButtonCells),
-          []
+          [this.paceBehavior]
         );
       } else {
         button = new Sprite(
@@ -886,10 +917,14 @@ class SnailBait {
   };
 
   private createRubySprites = () => {
+    const RUBY_SPARKLE_DURATION = 100,
+      RUBY_SPARKLE_INTERVAL = 500;
     const rubyArtist = new SpriteSheetArtist(this.spritesheet, this.rubyCells);
 
     for (let i = 0; i < this.rubyData.length; ++i) {
-      const ruby = new Sprite("ruby", rubyArtist, []);
+      const ruby = new Sprite("ruby", rubyArtist, [
+        new CycleBehavior(RUBY_SPARKLE_DURATION, RUBY_SPARKLE_INTERVAL),
+      ]);
 
       ruby.width = this.RUBY_CELLS_WIDTH;
       ruby.height = this.RUBY_CELLS_HEIGHT;
@@ -901,15 +936,18 @@ class SnailBait {
 
   private createRunnerSprite = () => {
     const RUNNER_LEFT = 50,
-      RUNNER_HEIGHT = 55;
+      RUNNER_HEIGHT = 55,
+      STARTING_RUNNER_TRACK: PlatformTrack = 1,
+      STARTING_RUN_ANIMATION_RATE = 0;
 
     this.runner = new Sprite(
       "runner",
       new SpriteSheetArtist(this.spritesheet, this.runnerCellsRight),
-      []
+      [this.runBehavior]
     );
+    this.runner.runAnimationRate = STARTING_RUN_ANIMATION_RATE;
 
-    this.runner.track = this.STARTING_RUNNER_TRACK;
+    this.runner.track = STARTING_RUNNER_TRACK;
     this.runner.left = RUNNER_LEFT;
     this.runner.top =
       this.calculatePlatformTop(this.runner.track) - RUNNER_HEIGHT;
@@ -918,13 +956,17 @@ class SnailBait {
   };
 
   private createSapphireSprites = () => {
+    const SAPPHIRE_SPARKLE_DURATION = 100,
+      SAPPHIRE_SPARKLE_INTERVAL = 300;
     const sapphireArtist = new SpriteSheetArtist(
       this.spritesheet,
       this.sapphireCells
     );
 
     for (let i = 0; i < this.sapphireData.length; ++i) {
-      const sapphire = new Sprite("sapphire", sapphireArtist, []);
+      const sapphire = new Sprite("sapphire", sapphireArtist, [
+        new CycleBehavior(SAPPHIRE_SPARKLE_DURATION, SAPPHIRE_SPARKLE_INTERVAL),
+      ]);
 
       sapphire.width = this.SAPPHIRE_CELLS_WIDTH;
       sapphire.height = this.SAPPHIRE_CELLS_HEIGHT;
@@ -941,13 +983,44 @@ class SnailBait {
     );
 
     for (let i = 0; i < this.snailData.length; ++i) {
-      const snail = new Sprite("snail", snailArtist, []);
+      const snail = new SnailSprite(snailArtist, [
+        this.paceBehavior,
+        this.snailShootBehavior,
+        new CycleBehavior(
+          300, // 300ms per image
+          1500 // 1.5 seconds interlude
+        ),
+      ]);
 
       snail.width = this.SNAIL_CELLS_WIDTH;
       snail.height = this.SNAIL_CELLS_HEIGHT;
       snail.velocityX = this.SNAIL_PACE_VELOCITY;
 
       this.snails.push(snail);
+    }
+  };
+
+  private armSnails = () => {
+    let snail: SnailSprite;
+    const snailBombArtist = new SpriteSheetArtist(
+      this.spritesheet,
+      this.snailBombCells
+    );
+
+    for (let i = 0; i < this.snails.length; ++i) {
+      snail = this.snails[i];
+      snail.bomb = new SnailBombSprite(snail, snailBombArtist, [
+        this.snailBombMoveBehavior,
+      ]);
+
+      snail.bomb.width = snailBait.SNAIL_BOMB_CELLS_WIDTH;
+      snail.bomb.height = snailBait.SNAIL_BOMB_CELLS_HEIGHT;
+
+      snail.bomb.top = snail.top + snail.bomb.height / 2;
+      snail.bomb.left = snail.left + snail.bomb.width / 2;
+      snail.bomb.visible = false;
+
+      this.sprites.push(snail.bomb);
     }
   };
 
@@ -1137,10 +1210,20 @@ class SnailBait {
 
   private turnLeft = () => {
     this.bgVelocity = -this.BACKGROUND_VELOCITY;
+    if (this.runner === undefined) {
+      return;
+    }
+    this.runner.runAnimationRate = this.RUN_ANIMATION_RATE;
+    this.runner.artist.cells = this.runnerCellsLeft;
   };
 
   private turnRight = () => {
     this.bgVelocity = this.BACKGROUND_VELOCITY;
+    if (this.runner === undefined) {
+      return;
+    }
+    this.runner.runAnimationRate = this.RUN_ANIMATION_RATE;
+    this.runner.artist.cells = this.runnerCellsRight;
   };
   private waitABit = async (msToWait: number): Promise<void> => {
     await new Promise((resolve) => setTimeout(resolve, msToWait));
