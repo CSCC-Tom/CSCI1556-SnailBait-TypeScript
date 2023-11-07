@@ -1,8 +1,23 @@
 import { CycleBehavior } from "./lib/behaviors/cycle";
+import { JumpBehavior } from "./lib/behaviors/jump";
 import { PaceBehavior } from "./lib/behaviors/pace";
 import { RunBehavior } from "./lib/behaviors/run";
 import { SnailBombMoveBehavior } from "./lib/behaviors/snailbombmove";
 import { SnailShootBehavior } from "./lib/behaviors/snailshoot";
+import {
+  PLATFORM_HEIGHT,
+  BUTTON_PACE_VELOCITY,
+  SNAIL_PACE_VELOCITY,
+  BACKGROUND_WIDTH,
+  BACKGROUND_HEIGHT,
+  PLATFORM_STROKE_WIDTH,
+  PLATFORM_STROKE_STYLE,
+  BACKGROUND_VELOCITY,
+  RUN_ANIMATION_RATE,
+  OPAQUE,
+  TRANSPARENT,
+  SHORT_DELAY,
+} from "./lib/constants";
 import {
   PlatformArtist,
   PlatformObject,
@@ -10,35 +25,17 @@ import {
   PlatformChild,
   PlatformTrack,
   ObjectCoordinates,
+  IBehavior,
 } from "./lib/definitions";
 import { Sprite, SpriteSheetArtist, SpritesheetCell } from "./lib/sprites";
 import { SnailSprite } from "./lib/sprites/snail";
 import { SnailBombSprite } from "./lib/sprites/snailbomb";
+import { Stopwatch } from "./lib/stopwatch";
 class SnailBait {
   private canvas: HTMLCanvasElement = document.getElementById(
     "game-canvas"
   ) as HTMLCanvasElement;
   private context: CanvasRenderingContext2D;
-
-  // Constants............................................................
-  private readonly SHORT_DELAY = 50; // milliseconds
-  private readonly TRANSPARENT = "0";
-  private readonly OPAQUE = "1.0";
-  private readonly BACKGROUND_VELOCITY = 42;
-  private readonly RUN_ANIMATION_RATE = 30;
-  private readonly PLATFORM_HEIGHT = 8;
-  private readonly PLATFORM_STROKE_WIDTH = 2;
-  private readonly PLATFORM_STROKE_STYLE = "rgb(0,0,0)"; // black
-
-  // Background width and height.........................................
-
-  private readonly BACKGROUND_WIDTH = 1102;
-  private readonly BACKGROUND_HEIGHT = 400;
-
-  // Velocities........................................................
-
-  private readonly BUTTON_PACE_VELOCITY = 80;
-  private readonly SNAIL_PACE_VELOCITY = 50;
 
   // Loading screen....................................................
 
@@ -229,6 +226,7 @@ class SnailBait {
   private snailBombMoveBehavior: SnailBombMoveBehavior;
   private runBehavior: RunBehavior;
   private paceBehavior: PaceBehavior;
+  private jumpBehavior: JumpBehavior;
 
   private platformArtist: PlatformArtist;
 
@@ -244,7 +242,7 @@ class SnailBait {
       {
         left: 10,
         width: 230,
-        height: this.PLATFORM_HEIGHT,
+        height: PLATFORM_HEIGHT,
         fillStyle: "rgb(150,190,255)",
         opacity: 1.0,
         track: 1,
@@ -254,7 +252,7 @@ class SnailBait {
       {
         left: 250,
         width: 100,
-        height: this.PLATFORM_HEIGHT,
+        height: PLATFORM_HEIGHT,
         fillStyle: "rgb(150,190,255)",
         opacity: 1.0,
         track: 2,
@@ -264,7 +262,7 @@ class SnailBait {
       {
         left: 400,
         width: 125,
-        height: this.PLATFORM_HEIGHT,
+        height: PLATFORM_HEIGHT,
         fillStyle: "rgb(250,0,0)",
         opacity: 1.0,
         track: 3,
@@ -274,7 +272,7 @@ class SnailBait {
       {
         left: 633,
         width: 300,
-        height: this.PLATFORM_HEIGHT,
+        height: PLATFORM_HEIGHT,
         fillStyle: "rgb(80,140,230)",
         opacity: 1.0,
         track: 1,
@@ -285,7 +283,7 @@ class SnailBait {
       {
         left: 810,
         width: 100,
-        height: this.PLATFORM_HEIGHT,
+        height: PLATFORM_HEIGHT,
         fillStyle: "rgb(200,200,0)",
         opacity: 1.0,
         track: 2,
@@ -295,7 +293,7 @@ class SnailBait {
       {
         left: 1025,
         width: 100,
-        height: this.PLATFORM_HEIGHT,
+        height: PLATFORM_HEIGHT,
         fillStyle: "rgb(80,140,230)",
         opacity: 1.0,
         track: 2,
@@ -305,7 +303,7 @@ class SnailBait {
       {
         left: 1200,
         width: 125,
-        height: this.PLATFORM_HEIGHT,
+        height: PLATFORM_HEIGHT,
         fillStyle: "aqua",
         opacity: 1.0,
         track: 3,
@@ -315,7 +313,7 @@ class SnailBait {
       {
         left: 1400,
         width: 180,
-        height: this.PLATFORM_HEIGHT,
+        height: PLATFORM_HEIGHT,
         fillStyle: "rgb(80,140,230)",
         opacity: 1.0,
         track: 1,
@@ -327,7 +325,7 @@ class SnailBait {
       {
         left: 1625,
         width: 100,
-        height: this.PLATFORM_HEIGHT,
+        height: PLATFORM_HEIGHT,
         fillStyle: "rgb(200,200,0)",
         opacity: 1.0,
         track: 2,
@@ -337,7 +335,7 @@ class SnailBait {
       {
         left: 1800,
         width: 250,
-        height: this.PLATFORM_HEIGHT,
+        height: PLATFORM_HEIGHT,
         fillStyle: "rgb(80,140,230)",
         opacity: 1.0,
         track: 1,
@@ -347,7 +345,7 @@ class SnailBait {
       {
         left: 2000,
         width: 100,
-        height: this.PLATFORM_HEIGHT,
+        height: PLATFORM_HEIGHT,
         fillStyle: "rgb(200,200,80)",
         opacity: 1.0,
         track: 2,
@@ -357,7 +355,7 @@ class SnailBait {
       {
         left: 2100,
         width: 100,
-        height: this.PLATFORM_HEIGHT,
+        height: PLATFORM_HEIGHT,
         fillStyle: "aqua",
         opacity: 1.0,
         track: 3,
@@ -368,7 +366,7 @@ class SnailBait {
       {
         left: 2269,
         width: 200,
-        height: this.PLATFORM_HEIGHT,
+        height: PLATFORM_HEIGHT,
         fillStyle: "gold",
         opacity: 1.0,
         track: 1,
@@ -377,7 +375,7 @@ class SnailBait {
       {
         left: 2500,
         width: 200,
-        height: this.PLATFORM_HEIGHT,
+        height: PLATFORM_HEIGHT,
         fillStyle: "#2b950a",
         opacity: 1.0,
         track: 2,
@@ -727,6 +725,8 @@ class SnailBait {
     // Move the snail bomb...............................................
 
     this.snailBombMoveBehavior = new SnailBombMoveBehavior();
+
+    this.jumpBehavior = new JumpBehavior();
   }
 
   public createSprites = () => {
@@ -801,6 +801,60 @@ class SnailBait {
     }
   };
 
+  private equipRunnerForJumping = () => {
+    if (this.runner === undefined) {
+      console.warn(
+        `equipRunnerForJumping called but this.runner was undefined!`
+      );
+
+      return;
+    }
+    const INITIAL_TRACK = 1,
+      RUNNER_JUMP_HEIGHT = 120,
+      RUNNER_JUMP_DURATION = 1000;
+
+    this.runner.JUMP_HEIGHT = RUNNER_JUMP_HEIGHT;
+    this.runner.JUMP_DURATION = RUNNER_JUMP_DURATION;
+
+    this.runner.jumping = false;
+    this.runner.track = INITIAL_TRACK;
+
+    this.runner.ascendTimer = new Stopwatch();
+    this.runner.descendTimer = new Stopwatch();
+
+    this.runner.jump = function () {
+      if (this.jumping)
+        // 'this' is the runner
+        return;
+
+      this.jumping = true;
+      this.runAnimationRate = 0; // Freeze the runner while jumping
+      this.verticalLaunchPosition = this.top;
+      if (this.ascendTimer === undefined) {
+        console.warn(
+          `runner jump function called but there was no defined ascend timer!`
+        );
+        return;
+      }
+      this.ascendTimer.start();
+    };
+
+    this.runner.stopJumping = function () {
+      this.jumping = false;
+      if (this.descendTimer === undefined) {
+        console.warn(
+          `runner stopJumping function called but there was no defined ascend timer!`
+        );
+        return;
+      }
+      this.descendTimer.stop();
+    };
+  };
+
+  private equipRunner = () => {
+    this.equipRunnerForJumping();
+  };
+
   private initializeSprites = () => {
     this.positionSprites(this.bats, this.batData);
     this.positionSprites(this.bees, this.beeData);
@@ -810,14 +864,17 @@ class SnailBait {
     this.positionSprites(this.sapphires, this.sapphireData);
     this.positionSprites(this.snails, this.snailData);
     this.armSnails();
+    this.equipRunner();
   };
 
   private createBatSprites = () => {
+    const BAT_FLAP_DURATION = 200,
+      BAT_FLAP_INTERVAL = 50;
     for (let i = 0; i < this.batData.length; ++i) {
       const bat = new Sprite(
         "bat",
         new SpriteSheetArtist(this.spritesheet, this.batCells),
-        []
+        [new CycleBehavior(BAT_FLAP_DURATION, BAT_FLAP_INTERVAL)]
       );
 
       // bat cell width leties; batCells[1] is widest
@@ -829,11 +886,13 @@ class SnailBait {
     }
   };
   private createBeeSprites = () => {
+    const BEE_FLAP_DURATION = 200,
+      BEE_FLAP_INTERVAL = 50;
     for (let i = 0; i < this.beeData.length; ++i) {
       const bee = new Sprite(
         "bee",
         new SpriteSheetArtist(this.spritesheet, this.beeCells),
-        []
+        [new CycleBehavior(BEE_FLAP_DURATION, BEE_FLAP_INTERVAL)]
       );
 
       bee.width = this.BEE_CELLS_WIDTH;
@@ -862,26 +921,30 @@ class SnailBait {
 
       button.width = this.BUTTON_CELLS_WIDTH;
       button.height = this.BUTTON_CELLS_HEIGHT;
-      button.velocityX = this.BUTTON_PACE_VELOCITY;
+      button.velocityX = BUTTON_PACE_VELOCITY;
 
       this.buttons.push(button);
     }
   };
 
   private createCoinSprites = () => {
+    const BLUE_SPARKLE_DURATION = 200,
+      BLUE_SPARKLE_INTERVAL = 50,
+      GOLD_SPARKLE_DURATION = 200,
+      GOLD_SPARKLE_INTERVAL = 50;
     for (let i = 0; i < this.coinData.length; ++i) {
       let coin;
       if (i % 2 === 0) {
         coin = new Sprite(
           "coin",
           new SpriteSheetArtist(this.spritesheet, this.goldCoinCells),
-          []
+          [new CycleBehavior(GOLD_SPARKLE_DURATION, GOLD_SPARKLE_INTERVAL)]
         );
       } else {
         coin = new Sprite(
           "coin",
           new SpriteSheetArtist(this.spritesheet, this.blueCoinCells),
-          []
+          [new CycleBehavior(BLUE_SPARKLE_DURATION, BLUE_SPARKLE_INTERVAL)]
         );
       }
 
@@ -943,7 +1006,7 @@ class SnailBait {
     this.runner = new Sprite(
       "runner",
       new SpriteSheetArtist(this.spritesheet, this.runnerCellsRight),
-      [this.runBehavior]
+      [this.runBehavior, this.jumpBehavior]
     );
     this.runner.runAnimationRate = STARTING_RUN_ANIMATION_RATE;
 
@@ -994,7 +1057,7 @@ class SnailBait {
 
       snail.width = this.SNAIL_CELLS_WIDTH;
       snail.height = this.SNAIL_CELLS_HEIGHT;
-      snail.velocityX = this.SNAIL_PACE_VELOCITY;
+      snail.velocityX = SNAIL_PACE_VELOCITY;
 
       this.snails.push(snail);
     }
@@ -1084,10 +1147,7 @@ class SnailBait {
     this.backgroundOffset +=
       (this.bgVelocity * (now - this.lastAnimationFrameTime)) / 1000;
 
-    if (
-      this.backgroundOffset < 0 ||
-      this.backgroundOffset > this.BACKGROUND_WIDTH
-    ) {
+    if (this.backgroundOffset < 0 || this.backgroundOffset > BACKGROUND_WIDTH) {
       this.backgroundOffset = 0;
     }
   };
@@ -1129,12 +1189,12 @@ class SnailBait {
       this.spritesheet,
       0,
       BACKGROUND_TOP_IN_SPRITESHEET,
-      this.BACKGROUND_WIDTH,
-      this.BACKGROUND_HEIGHT,
+      BACKGROUND_WIDTH,
+      BACKGROUND_HEIGHT,
       0,
       0,
-      this.BACKGROUND_WIDTH,
-      this.BACKGROUND_HEIGHT
+      BACKGROUND_WIDTH,
+      BACKGROUND_HEIGHT
     );
 
     // Initially offscreen:
@@ -1142,12 +1202,12 @@ class SnailBait {
       this.spritesheet,
       0,
       BACKGROUND_TOP_IN_SPRITESHEET,
-      this.BACKGROUND_WIDTH,
-      this.BACKGROUND_HEIGHT,
-      this.BACKGROUND_WIDTH,
+      BACKGROUND_WIDTH,
+      BACKGROUND_HEIGHT,
+      BACKGROUND_WIDTH,
       0,
-      this.BACKGROUND_WIDTH,
-      this.BACKGROUND_HEIGHT
+      BACKGROUND_WIDTH,
+      BACKGROUND_HEIGHT
     );
 
     // Translate back to the original location
@@ -1157,8 +1217,8 @@ class SnailBait {
   private drawPlatform = (data: PlatformObject) => {
     const platformTop = this.calculatePlatformTop(data.track);
 
-    this.context.lineWidth = this.PLATFORM_STROKE_WIDTH;
-    this.context.strokeStyle = this.PLATFORM_STROKE_STYLE;
+    this.context.lineWidth = PLATFORM_STROKE_WIDTH;
+    this.context.strokeStyle = PLATFORM_STROKE_STYLE;
     this.context.fillStyle = data.fillStyle;
     this.context.globalAlpha = data.opacity;
 
@@ -1209,20 +1269,20 @@ class SnailBait {
   };
 
   private turnLeft = () => {
-    this.bgVelocity = -this.BACKGROUND_VELOCITY;
+    this.bgVelocity = -BACKGROUND_VELOCITY;
     if (this.runner === undefined) {
       return;
     }
-    this.runner.runAnimationRate = this.RUN_ANIMATION_RATE;
+    this.runner.runAnimationRate = RUN_ANIMATION_RATE;
     this.runner.artist.cells = this.runnerCellsLeft;
   };
 
   private turnRight = () => {
-    this.bgVelocity = this.BACKGROUND_VELOCITY;
+    this.bgVelocity = BACKGROUND_VELOCITY;
     if (this.runner === undefined) {
       return;
     }
-    this.runner.runAnimationRate = this.RUN_ANIMATION_RATE;
+    this.runner.runAnimationRate = RUN_ANIMATION_RATE;
     this.runner.artist.cells = this.runnerCellsRight;
   };
   private waitABit = async (msToWait: number): Promise<void> => {
@@ -1242,7 +1302,7 @@ class SnailBait {
       timeElapsed += 100;
     }
     for (let i = 0; i < args.length; i++) {
-      args[i].style.opacity = this.OPAQUE;
+      args[i].style.opacity = OPAQUE;
     }
   };
   private fadeOutElements = async (
@@ -1260,7 +1320,7 @@ class SnailBait {
     }
     for (let i = 0; i < args.length; i++) {
       args[i].style.display = "none";
-      args[i].style.opacity = this.TRANSPARENT;
+      args[i].style.opacity = TRANSPARENT;
     }
   };
   private hideToast = () => {
@@ -1296,10 +1356,34 @@ class SnailBait {
     }
   };
 
+  private togglePausedStateOfAllBehaviors = () => {
+    let behavior: IBehavior;
+
+    for (let i = 0; i < this.sprites.length; ++i) {
+      const sprite = this.sprites[i];
+
+      for (let j = 0; j < sprite.behaviors.length; ++j) {
+        behavior = sprite.behaviors[j];
+
+        if (this.paused) {
+          if (behavior.pause) {
+            behavior.pause(sprite);
+          }
+        } else {
+          if (behavior.unpause) {
+            behavior.unpause(sprite);
+          }
+        }
+      }
+    }
+  };
+
   private togglePaused = () => {
     const now = +new Date();
 
     this.paused = !this.paused;
+
+    this.togglePausedStateOfAllBehaviors();
 
     if (this.paused) {
       this.pauseStartTime = now;
@@ -1322,7 +1406,7 @@ class SnailBait {
     }, LOADING_SCREEN_TRANSITION_DURATION);
   };
   private loadingAnimationLoaded = () => {
-    this.fadeInElements(this.SHORT_DELAY, [
+    this.fadeInElements(SHORT_DELAY, [
       this.runnerAnimatedGIFElement,
       this.loadingTitleElement,
     ]);
@@ -1344,10 +1428,10 @@ class SnailBait {
     snailBait.soundAndMusicElement.style.opacity = FINAL_OPACITY;
   };
   private revealCanvas = () => {
-    this.fadeInElements(this.SHORT_DELAY, [this.canvas]);
+    this.fadeInElements(SHORT_DELAY, [this.canvas]);
   };
   private revealTopChrome = () => {
-    this.fadeInElements(this.SHORT_DELAY, [this.fpsElement, this.scoreElement]);
+    this.fadeInElements(SHORT_DELAY, [this.fpsElement, this.scoreElement]);
   };
   private revealTopChromeDimmed = () => {
     const DIM = "0.25";
@@ -1358,10 +1442,10 @@ class SnailBait {
     setTimeout(function () {
       snailBait.scoreElement.style.opacity = DIM;
       snailBait.fpsElement.style.opacity = DIM;
-    }, this.SHORT_DELAY);
+    }, SHORT_DELAY);
   };
   private revealBottomChrome = () => {
-    this.fadeInElements(this.SHORT_DELAY, [
+    this.fadeInElements(SHORT_DELAY, [
       this.soundAndMusicElement,
       this.instructionsElement,
       this.copyrightElement,
@@ -1406,6 +1490,21 @@ class SnailBait {
       // (key === 80) {
       // 'p'
       this.togglePaused();
+    } else if (e.code === "KeyJ") {
+      // 'j'
+      if (this.runner === undefined) {
+        console.warn(
+          `onKeyDownEvent(KeyJ) happened but this.runner was undefined!`
+        );
+        return;
+      }
+      if (this.runner.jump === undefined) {
+        console.warn(
+          `onKeyDownEvent(KeyJ) happened but this.runner.jump() function was undefined!`
+        );
+        return;
+      }
+      this.runner.jump();
     }
   };
 

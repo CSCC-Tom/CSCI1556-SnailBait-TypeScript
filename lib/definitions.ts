@@ -105,7 +105,9 @@ export type SpriteType =
   | "snail"
   | "snail bomb";
 
-export interface Behavior {
+export interface IBehavior {
+  pause?: (sprite: Sprite) => void;
+  unpause?: (sprite: Sprite) => void;
   execute: (
     sprite: Sprite,
     now: number,

@@ -1,5 +1,5 @@
 import {
-  Behavior,
+  IBehavior,
   SpriteType,
   PlatformObject,
   PlatformTrack,
@@ -8,6 +8,7 @@ import {
 } from "./definitions";
 import { SnailSprite } from "./sprites/snail";
 import { SnailBombSprite } from "./sprites/snailbomb";
+import { Stopwatch } from "./stopwatch";
 
 export enum SpriteDirection {
   LEFT = 1,
@@ -66,7 +67,7 @@ export class Sprite {
   public static readonly DEFAULT_OPACITY = 1.0;
   public readonly artist: SpriteSheetArtist;
   public type: SpriteType;
-  public behaviors: Behavior[];
+  public behaviors: IBehavior[];
   public hOffset = 0; // Horizontal offset
   public left = 0;
   public top = 0;
@@ -92,6 +93,16 @@ export class Sprite {
 
   // BEHAVIORAL
   public direction?: SpriteDirection;
+  // // Jumping
+  public jumping?: boolean;
+  public ascendTimer?: Stopwatch;
+  public descendTimer?: Stopwatch;
+  public JUMP_DURATION?: number;
+  public JUMP_HEIGHT?: number;
+  public verticalLaunchPosition?: number;
+  public jumpApex?: number;
+  public jump?: () => void;
+  public stopJumping?: () => void;
 
   // SNAIL-ONLY
   // Snails maintain a reference to their bomb
@@ -102,7 +113,7 @@ export class Sprite {
   constructor(
     type: SpriteType,
     artist: SpriteSheetArtist,
-    behaviors: Behavior[]
+    behaviors: IBehavior[]
   ) {
     this.artist = artist;
     this.type = type;
