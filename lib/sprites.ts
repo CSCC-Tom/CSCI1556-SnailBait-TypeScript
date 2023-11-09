@@ -2,11 +2,10 @@ import { AnimationTimer } from "./animationTimer";
 import {
   IBehavior,
   SpriteType,
-  PlatformObject,
-  PlatformTrack,
   RectObject,
   RectBoundaries,
 } from "./definitions";
+import { PlatformTrack, PlatformObject } from "./sprites/platform";
 import { SnailSprite } from "./sprites/snail";
 import { SnailBombSprite } from "./sprites/snailbomb";
 
@@ -103,6 +102,9 @@ export class Sprite {
   public jumpApex?: number;
   public jump?: () => void;
   public stopJumping?: () => void;
+  public fall?: () => void;
+
+  public exploding?: boolean;
 
   // SNAIL-ONLY
   // Snails maintain a reference to their bomb

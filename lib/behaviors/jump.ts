@@ -1,8 +1,15 @@
 import { Behavior } from "../behavior";
 import { RUN_ANIMATION_RATE } from "../constants";
 import { Sprite } from "../sprites";
+import { PlatformSprite, platformUnderneath } from "../sprites/platform";
 
 export class JumpBehavior extends Behavior {
+  private readonly allPlatforms: PlatformSprite[];
+  constructor(platforms: PlatformSprite[]) {
+    super();
+    this.allPlatforms = platforms;
+  }
+
   public pause = (sprite: Sprite, now?: number) => {
     if (sprite.ascendTimer?.isRunning()) {
       sprite.ascendTimer.pause(now);
@@ -76,12 +83,20 @@ export class JumpBehavior extends Behavior {
     );
   };
   private finishDescent = (sprite: Sprite) => {
-    sprite.top = sprite.verticalLaunchPosition
-      ? sprite.verticalLaunchPosition
-      : 0;
-    sprite.runAnimationRate = RUN_ANIMATION_RATE;
     sprite.stopJumping?.();
     sprite.runAnimationRate = RUN_ANIMATION_RATE;
+
+    if (platformUnderneath(sprite, sprite.track, this.allPlatforms)) {
+      sprite.top = sprite.verticalLaunchPosition
+        ? sprite.verticalLaunchPosition
+        : 0;
+    } else if (sprite.fall) {
+      sprite.fall();
+    } else {
+      console.warn(
+        `JumpBehavior.finishDescent(${sprite.type}) -> passed-in sprite did not have a fall function to call!`
+      );
+    }
   };
 
   public execute = (
@@ -91,7 +106,7 @@ export class JumpBehavior extends Behavior {
     //context: CanvasRenderingContext2D,
     //lastAnimationFrameTime: number
   ) => {
-    if (!sprite.jumping || sprite.track === 3) {
+    if (!sprite.jumping) {
       return;
     }
 

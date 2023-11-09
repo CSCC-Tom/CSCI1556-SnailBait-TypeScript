@@ -1,5 +1,6 @@
 import { AnimationTimer } from "./lib/animationTimer";
 import { BounceBehavior } from "./lib/behaviors/bounce";
+import { CollideBehavior } from "./lib/behaviors/collide";
 import { CycleBehavior } from "./lib/behaviors/cycle";
 import { JumpBehavior } from "./lib/behaviors/jump";
 import { PaceBehavior } from "./lib/behaviors/pace";
@@ -21,17 +22,15 @@ import {
   TRANSPARENT,
   SHORT_DELAY,
 } from "./lib/constants";
+import { ObjectCoordinates, IBehavior, WaitABit } from "./lib/definitions";
+import { Sprite, SpriteSheetArtist, SpritesheetCell } from "./lib/sprites";
 import {
   PlatformArtist,
   PlatformObject,
   PlatformSprite,
   PlatformChild,
   PlatformTrack,
-  ObjectCoordinates,
-  IBehavior,
-  WaitABit,
-} from "./lib/definitions";
-import { Sprite, SpriteSheetArtist, SpritesheetCell } from "./lib/sprites";
+} from "./lib/sprites/platform";
 import { SnailSprite } from "./lib/sprites/snail";
 import { SnailBombSprite } from "./lib/sprites/snailbomb";
 import { TimeSystem } from "./lib/timeSystem";
@@ -45,8 +44,9 @@ class SnailBait {
   // Time..............................................................
 
   private static timeSystem = new TimeSystem(); // See js/timeSystem.js
-  private timeRate = 1.0; // 1.0 is normal speed, 0.5 is 1/2 speed, etc.
-  private TIME_RATE_DURING_TRANSITIONS = 0.2; // percent
+  private timeFactor = 1.0; // 1.0 is normal speed, 0.5 is 1/2 speed, etc.
+  private readonly TIME_RATE_DURING_TRANSITIONS = 0.2; // percent
+  private readonly NORMAL_TIME_RATE = 1.0;
 
   // Loading screen....................................................
 
@@ -61,9 +61,9 @@ class SnailBait {
   ) as HTMLImageElement;
 
   // Track baselines...................................................
-  private TRACK_1_BASELINE = 323;
-  private TRACK_2_BASELINE = 223;
-  private TRACK_3_BASELINE = 123;
+  private static TRACK_1_BASELINE = 323;
+  private static TRACK_2_BASELINE = 223;
+  private static TRACK_3_BASELINE = 123;
 
   // Platform scrolling offset (and therefore speed) is
   // PLATFORM_VELOCITY_MULTIPLIER * backgroundOffset: The
@@ -238,6 +238,7 @@ class SnailBait {
   private runBehavior: RunBehavior;
   private paceBehavior: PaceBehavior;
   private jumpBehavior: JumpBehavior;
+  private collideBehavior: CollideBehavior;
 
   private platformArtist: PlatformArtist;
 
@@ -259,7 +260,6 @@ class SnailBait {
         track: 1,
         pulsate: true,
       },
-
       {
         left: 250,
         width: 100,
@@ -269,7 +269,6 @@ class SnailBait {
         track: 2,
         pulsate: true,
       },
-
       {
         left: 400,
         width: 125,
@@ -279,7 +278,6 @@ class SnailBait {
         track: 3,
         pulsate: true,
       },
-
       {
         left: 633,
         width: 300,
@@ -290,7 +288,6 @@ class SnailBait {
         pulsate: true,
       },
       // Screen 2.......................................................
-
       {
         left: 810,
         width: 100,
@@ -300,7 +297,6 @@ class SnailBait {
         track: 2,
         pulsate: false,
       },
-
       {
         left: 1025,
         width: 100,
@@ -310,7 +306,6 @@ class SnailBait {
         track: 2,
         pulsate: false,
       },
-
       {
         left: 1200,
         width: 125,
@@ -320,7 +315,6 @@ class SnailBait {
         track: 3,
         pulsate: false,
       },
-
       {
         left: 1400,
         width: 180,
@@ -330,9 +324,7 @@ class SnailBait {
         track: 1,
         pulsate: false,
       },
-
       // Screen 3.......................................................
-
       {
         left: 1625,
         width: 100,
@@ -342,7 +334,6 @@ class SnailBait {
         track: 2,
         pulsate: false,
       },
-
       {
         left: 1800,
         width: 250,
@@ -352,7 +343,6 @@ class SnailBait {
         track: 1,
         pulsate: false,
       },
-
       {
         left: 2000,
         width: 100,
@@ -362,7 +352,6 @@ class SnailBait {
         track: 2,
         pulsate: false,
       },
-
       {
         left: 2100,
         width: 100,
@@ -374,7 +363,6 @@ class SnailBait {
       },
 
       // Screen 4.......................................................
-
       {
         left: 2269,
         width: 200,
@@ -384,7 +372,6 @@ class SnailBait {
         track: 1,
         pulsate: false,
       },
-
       {
         left: 2500,
         width: 200,
@@ -418,14 +405,12 @@ class SnailBait {
         width: this.BEE_CELLS_WIDTH,
         height: this.BEE_CELLS_HEIGHT,
       },
-
       {
         left: 75,
         top: 234,
         width: this.BEE_CELLS_WIDTH,
         height: this.BEE_CELLS_HEIGHT,
       },
-
       {
         left: 145,
         top: 234,
@@ -440,7 +425,6 @@ class SnailBait {
         width: this.COIN_CELLS_WIDTH,
         height: this.COIN_CELLS_HEIGHT,
       },
-
       {
         left: 5 + this.COIN_CELLS_WIDTH,
         top: 540,
@@ -499,7 +483,6 @@ class SnailBait {
         width: this.BUTTON_CELLS_WIDTH,
         height: this.BUTTON_CELLS_HEIGHT,
       },
-
       {
         left: 132,
         top: 190,
@@ -514,28 +497,24 @@ class SnailBait {
         width: this.RUBY_CELLS_WIDTH,
         height: this.RUBY_CELLS_HEIGHT,
       },
-
       {
         left: 39,
         top: 138,
         width: this.RUBY_CELLS_WIDTH,
         height: this.RUBY_CELLS_HEIGHT,
       },
-
       {
         left: 76,
         top: 138,
         width: this.RUBY_CELLS_WIDTH,
         height: this.RUBY_CELLS_HEIGHT,
       },
-
       {
         left: 112,
         top: 138,
         width: this.RUBY_CELLS_WIDTH,
         height: this.RUBY_CELLS_HEIGHT,
       },
-
       {
         left: 148,
         top: 138,
@@ -545,40 +524,24 @@ class SnailBait {
     ];
     this.runnerCellsRight = [
       { left: 414, top: 385, width: 47, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 362, top: 385, width: 44, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 314, top: 385, width: 39, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 265, top: 385, width: 46, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 205, top: 385, width: 49, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 150, top: 385, width: 46, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 96, top: 385, width: 46, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 45, top: 385, width: 35, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 0, top: 385, width: 35, height: this.RUNNER_CELLS_HEIGHT },
     ];
     this.runnerCellsLeft = [
       { left: 0, top: 305, width: 47, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 55, top: 305, width: 44, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 107, top: 305, width: 39, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 152, top: 305, width: 46, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 208, top: 305, width: 49, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 265, top: 305, width: 46, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 320, top: 305, width: 42, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 380, top: 305, width: 35, height: this.RUNNER_CELLS_HEIGHT },
-
       { left: 425, top: 305, width: 35, height: this.RUNNER_CELLS_HEIGHT },
     ];
     this.rubyCells = [
@@ -639,31 +602,26 @@ class SnailBait {
         height: this.SNAIL_CELLS_HEIGHT,
       },
     ];
+
+    const track1baseline = SnailBait.TRACK_1_BASELINE,
+      track2baseline = SnailBait.TRACK_2_BASELINE,
+      track3baseline = SnailBait.TRACK_3_BASELINE;
     this.batData = [
-      { left: 85, top: this.TRACK_2_BASELINE - 1.5 * this.BAT_CELLS_HEIGHT },
-
-      { left: 620, top: this.TRACK_3_BASELINE },
-
-      { left: 904, top: this.TRACK_3_BASELINE - 3 * this.BAT_CELLS_HEIGHT },
-
-      { left: 1150, top: this.TRACK_2_BASELINE - 3 * this.BAT_CELLS_HEIGHT },
-
-      { left: 1720, top: this.TRACK_2_BASELINE - 2 * this.BAT_CELLS_HEIGHT },
-
-      { left: 1960, top: this.TRACK_3_BASELINE - this.BAT_CELLS_HEIGHT },
-
-      { left: 2200, top: this.TRACK_3_BASELINE - this.BAT_CELLS_HEIGHT },
-
-      { left: 2380, top: this.TRACK_3_BASELINE - 2 * this.BAT_CELLS_HEIGHT },
+      { left: 85, top: track2baseline - 1.5 * this.BAT_CELLS_HEIGHT },
+      { left: 620, top: track3baseline },
+      { left: 904, top: track3baseline - 3 * this.BAT_CELLS_HEIGHT },
+      { left: 1150, top: track2baseline - 3 * this.BAT_CELLS_HEIGHT },
+      { left: 1720, top: track2baseline - 2 * this.BAT_CELLS_HEIGHT },
+      { left: 1960, top: track3baseline - this.BAT_CELLS_HEIGHT },
+      { left: 2200, top: track3baseline - this.BAT_CELLS_HEIGHT },
+      { left: 2380, top: track3baseline - 2 * this.BAT_CELLS_HEIGHT },
     ];
     this.beeData = [
-      { left: 200, top: this.TRACK_1_BASELINE - this.BEE_CELLS_HEIGHT * 1.5 },
-      { left: 350, top: this.TRACK_2_BASELINE - this.BEE_CELLS_HEIGHT * 1.5 },
-      { left: 550, top: this.TRACK_1_BASELINE - this.BEE_CELLS_HEIGHT },
-      { left: 750, top: this.TRACK_1_BASELINE - this.BEE_CELLS_HEIGHT * 1.5 },
-
-      { left: 924, top: this.TRACK_2_BASELINE - this.BEE_CELLS_HEIGHT * 1.75 },
-
+      { left: 200, top: track1baseline - this.BEE_CELLS_HEIGHT * 1.5 },
+      { left: 350, top: track2baseline - this.BEE_CELLS_HEIGHT * 1.5 },
+      { left: 550, top: track1baseline - this.BEE_CELLS_HEIGHT },
+      { left: 750, top: track1baseline - this.BEE_CELLS_HEIGHT * 1.5 },
+      { left: 924, top: track2baseline - this.BEE_CELLS_HEIGHT * 1.75 },
       { left: 1500, top: 225 },
       { left: 1600, top: 115 },
       { left: 2225, top: 125 },
@@ -672,56 +630,39 @@ class SnailBait {
     ];
     this.buttonData = [{ platformIndex: 2 }, { platformIndex: 12 }];
     this.coinData = [
-      { left: 270, top: this.TRACK_2_BASELINE - this.COIN_CELLS_HEIGHT },
-
-      { left: 489, top: this.TRACK_3_BASELINE - this.COIN_CELLS_HEIGHT },
-
-      { left: 620, top: this.TRACK_1_BASELINE - this.COIN_CELLS_HEIGHT },
-
-      { left: 833, top: this.TRACK_2_BASELINE - this.COIN_CELLS_HEIGHT },
-
-      { left: 1050, top: this.TRACK_2_BASELINE - this.COIN_CELLS_HEIGHT },
-
-      { left: 1450, top: this.TRACK_1_BASELINE - this.COIN_CELLS_HEIGHT },
-
-      { left: 1670, top: this.TRACK_2_BASELINE - this.COIN_CELLS_HEIGHT },
-
-      { left: 1870, top: this.TRACK_1_BASELINE - this.COIN_CELLS_HEIGHT },
-
-      { left: 1930, top: this.TRACK_1_BASELINE - this.COIN_CELLS_HEIGHT },
-
-      { left: 2200, top: this.TRACK_2_BASELINE - this.COIN_CELLS_HEIGHT },
-
-      { left: 2320, top: this.TRACK_2_BASELINE - this.COIN_CELLS_HEIGHT },
-
-      { left: 2360, top: this.TRACK_1_BASELINE - this.COIN_CELLS_HEIGHT },
+      { left: 270, top: track2baseline - this.COIN_CELLS_HEIGHT },
+      { left: 489, top: track3baseline - this.COIN_CELLS_HEIGHT },
+      { left: 620, top: track1baseline - this.COIN_CELLS_HEIGHT },
+      { left: 833, top: track2baseline - this.COIN_CELLS_HEIGHT },
+      { left: 1050, top: track2baseline - this.COIN_CELLS_HEIGHT },
+      { left: 1450, top: track1baseline - this.COIN_CELLS_HEIGHT },
+      { left: 1670, top: track2baseline - this.COIN_CELLS_HEIGHT },
+      { left: 1870, top: track1baseline - this.COIN_CELLS_HEIGHT },
+      { left: 1930, top: track1baseline - this.COIN_CELLS_HEIGHT },
+      { left: 2200, top: track2baseline - this.COIN_CELLS_HEIGHT },
+      { left: 2320, top: track2baseline - this.COIN_CELLS_HEIGHT },
+      { left: 2360, top: track1baseline - this.COIN_CELLS_HEIGHT },
     ];
     this.sapphireData = [
-      { left: 70, top: this.TRACK_1_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
-
-      { left: 880, top: this.TRACK_2_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
-
-      { left: 1100, top: this.TRACK_2_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
-
-      { left: 1475, top: this.TRACK_1_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
-
-      { left: 2400, top: this.TRACK_1_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
+      { left: 70, top: track1baseline - this.SAPPHIRE_CELLS_HEIGHT },
+      { left: 880, top: track2baseline - this.SAPPHIRE_CELLS_HEIGHT },
+      { left: 1100, top: track2baseline - this.SAPPHIRE_CELLS_HEIGHT },
+      { left: 1475, top: track1baseline - this.SAPPHIRE_CELLS_HEIGHT },
+      { left: 2400, top: track1baseline - this.SAPPHIRE_CELLS_HEIGHT },
     ];
     this.rubyData = [
-      { left: 690, top: this.TRACK_1_BASELINE - this.RUBY_CELLS_HEIGHT },
-
-      { left: 1700, top: this.TRACK_2_BASELINE - this.RUBY_CELLS_HEIGHT },
-
-      { left: 2056, top: this.TRACK_2_BASELINE - this.RUBY_CELLS_HEIGHT },
+      { left: 690, top: track1baseline - this.RUBY_CELLS_HEIGHT },
+      { left: 1700, top: track2baseline - this.RUBY_CELLS_HEIGHT },
+      { left: 2056, top: track2baseline - this.RUBY_CELLS_HEIGHT },
     ];
     this.smokingHoleData = [
-      { left: 248, top: this.TRACK_2_BASELINE - 22 },
-      { left: 688, top: this.TRACK_3_BASELINE + 5 },
-      { left: 1352, top: this.TRACK_2_BASELINE - 18 },
+      { left: 248, top: track2baseline - 22 },
+      { left: 688, top: track3baseline + 5 },
+      { left: 1352, top: track2baseline - 18 },
     ];
     this.snailData = [{ platformIndex: 3 }];
     // Sprite artists....................................................
-    this.platformArtist = new PlatformArtist(this.calculatePlatformTop);
+    this.platformArtist = new PlatformArtist(SnailBait.calculatePlatformTop);
     // ------------------------Sprite behaviors-------------------------
 
     // Pacing on platforms...............................................
@@ -740,7 +681,12 @@ class SnailBait {
 
     this.snailBombMoveBehavior = new SnailBombMoveBehavior();
 
-    this.jumpBehavior = new JumpBehavior();
+    this.jumpBehavior = new JumpBehavior(this.platforms);
+    this.collideBehavior = new CollideBehavior(
+      SnailBait.timeSystem,
+      SnailBait.calculatePlatformTop,
+      this.getAllSprites
+    );
   }
 
   public createSprites = () => {
@@ -760,6 +706,10 @@ class SnailBait {
     // All sprites are also stored in a single array
 
     this.addSpritesToSpriteArray();
+  };
+
+  private readonly getAllSprites = () => {
+    return this.sprites;
   };
 
   private addSpritesToSpriteArray = () => {
@@ -861,13 +811,25 @@ class SnailBait {
 
     this.runner.stopJumping = function () {
       this.jumping = false;
-      if (this.descendTimer === undefined) {
+      if (this.ascendTimer === undefined) {
         console.warn(
           `runner stopJumping function called but there was no defined ascend timer!`
         );
-        return;
+      } else {
+        this.ascendTimer.stop();
       }
-      this.descendTimer.stop();
+      if (this.descendTimer === undefined) {
+        console.warn(
+          `runner stopJumping function called but there was no defined descend timer!`
+        );
+      } else {
+        this.descendTimer.stop();
+      }
+    };
+    this.runner.fall = function () {
+      // For now...
+      this.track = 1;
+      this.top = SnailBait.calculatePlatformTop(this.track) - this.height;
     };
   };
 
@@ -876,10 +838,10 @@ class SnailBait {
   };
 
   private setTimeRate = (rate: number) => {
-    this.timeRate = rate;
+    this.timeFactor = rate;
 
-    SnailBait.timeSystem.setTransducer(function (now) {
-      return now * snailBait.timeRate;
+    SnailBait.timeSystem.setTransducer(function (percent) {
+      return percent * snailBait.timeFactor;
     });
   };
 
@@ -909,7 +871,12 @@ class SnailBait {
 
       bat.width = this.batCells[1].width;
       bat.height = this.BAT_CELLS_HEIGHT;
-
+      bat.collisionMargin = {
+        left: 6,
+        top: 11,
+        right: 4,
+        bottom: 8,
+      };
       this.bats.push(bat);
     }
   };
@@ -925,7 +892,12 @@ class SnailBait {
 
       bee.width = this.BEE_CELLS_WIDTH;
       bee.height = this.BEE_CELLS_HEIGHT;
-
+      bee.collisionMargin = {
+        left: 10,
+        top: 10,
+        right: 5,
+        bottom: 10,
+      };
       this.bees.push(bee);
     }
   };
@@ -995,7 +967,12 @@ class SnailBait {
       coin.width = this.COIN_CELLS_WIDTH;
       coin.height = this.COIN_CELLS_HEIGHT;
       coin.value = 50;
-
+      coin.collisionMargin = {
+        left: coin.width / 8,
+        top: coin.height / 8,
+        right: coin.width / 8,
+        bottom: coin.height / 4,
+      };
       this.coins.push(coin);
     }
   };
@@ -1019,7 +996,7 @@ class SnailBait {
       sprite.button = pd.button;
       sprite.pulsate = pd.pulsate;
 
-      sprite.top = this.calculatePlatformTop(pd.track);
+      sprite.top = SnailBait.calculatePlatformTop(pd.track);
       if (sprite.pulsate) {
         sprite.behaviors = [
           new PulseBehavior(PULSE_DURATION, PULSE_OPACITY_THRESHOLD),
@@ -1049,7 +1026,12 @@ class SnailBait {
       ruby.width = this.RUBY_CELLS_WIDTH;
       ruby.height = this.RUBY_CELLS_HEIGHT;
       ruby.value = 200;
-
+      ruby.collisionMargin = {
+        left: ruby.width / 5,
+        top: ruby.height / 8,
+        right: 0,
+        bottom: ruby.height / 4,
+      };
       this.rubies.push(ruby);
     }
   };
@@ -1063,15 +1045,22 @@ class SnailBait {
     this.runner = new Sprite(
       "runner",
       new SpriteSheetArtist(this.spritesheet, this.runnerCellsRight),
-      [this.runBehavior, this.jumpBehavior]
+      [this.runBehavior, this.jumpBehavior, this.collideBehavior]
     );
     this.runner.runAnimationRate = STARTING_RUN_ANIMATION_RATE;
 
     this.runner.track = STARTING_RUNNER_TRACK;
     this.runner.left = RUNNER_LEFT;
     this.runner.top =
-      this.calculatePlatformTop(this.runner.track) - RUNNER_HEIGHT;
-
+      SnailBait.calculatePlatformTop(this.runner.track) - RUNNER_HEIGHT;
+    this.runner.width = this.RUNNER_CELLS_WIDTH;
+    this.runner.height = this.RUNNER_CELLS_HEIGHT;
+    this.runner.collisionMargin = {
+      left: 20,
+      top: 15,
+      right: 15,
+      bottom: 20,
+    };
     this.sprites.push(this.runner);
   };
 
@@ -1100,7 +1089,12 @@ class SnailBait {
       sapphire.width = this.SAPPHIRE_CELLS_WIDTH;
       sapphire.height = this.SAPPHIRE_CELLS_HEIGHT;
       sapphire.value = 100;
-
+      sapphire.collisionMargin = {
+        left: sapphire.width / 8,
+        top: sapphire.height / 8,
+        right: sapphire.width / 8,
+        bottom: sapphire.height / 4,
+      };
       this.sapphires.push(sapphire);
     }
   };
@@ -1193,6 +1187,10 @@ class SnailBait {
     this.drawBackground();
     this.updateSprites(now);
     this.drawSprites();
+    /*
+      this.drawRunner();
+      this.drawPlatforms();
+      */
   };
 
   private setPlatformVelocity = () => {
@@ -1202,6 +1200,7 @@ class SnailBait {
   private setOffsets = (now: number) => {
     this.setBackgroundOffset(now);
     this.setSpriteOffsets(now);
+    //this.setPlatformOffset(now);
   };
 
   private setBackgroundOffset = (now: number) => {
@@ -1276,7 +1275,7 @@ class SnailBait {
   };
 
   private drawPlatform = (data: PlatformObject) => {
-    const platformTop = this.calculatePlatformTop(data.track);
+    const platformTop = SnailBait.calculatePlatformTop(data.track);
 
     this.context.lineWidth = PLATFORM_STROKE_WIDTH;
     this.context.strokeStyle = PLATFORM_STROKE_STYLE;
@@ -1301,7 +1300,7 @@ class SnailBait {
 
   private calculateFps = (now: number) => {
     const fps =
-      (1 / (now - this.lastAnimationFrameTime)) * 1000 * this.timeRate;
+      (1 / (now - this.lastAnimationFrameTime)) * 1000 * this.timeFactor;
 
     if (now - this.lastFpsUpdateTime > 1000) {
       this.lastFpsUpdateTime = now;
@@ -1317,15 +1316,15 @@ class SnailBait {
     sprite.left = platformSprite.left;
     sprite.platform = platformSprite;
   };
-  private calculatePlatformTop = (track: PlatformTrack) => {
+  private static calculatePlatformTop = (track: PlatformTrack) => {
     if (track === 1) {
-      return this.TRACK_1_BASELINE;
+      return SnailBait.TRACK_1_BASELINE;
     } // 323 pixels
     else if (track === 2) {
-      return this.TRACK_2_BASELINE;
+      return SnailBait.TRACK_2_BASELINE;
     } // 223 pixels
     else if (track === 3) {
-      return this.TRACK_3_BASELINE;
+      return SnailBait.TRACK_3_BASELINE;
     } // 123 pixels
     return 23; // "hypothetical track 4"
   };
@@ -1623,7 +1622,7 @@ class SnailBait {
     this.revealInitialToast();
 
     SnailBait.timeSystem.start();
-    this.setTimeRate(0.1);
+    //this.setTimeRate(0.25);
     this.gameStarted = true;
 
     window.requestAnimationFrame(this.animate);
