@@ -78,8 +78,8 @@ export class JumpBehavior extends Behavior {
     sprite.top = sprite.verticalLaunchPosition
       ? sprite.verticalLaunchPosition
       : 0;
-    sprite.stopJumping?.();
     sprite.runAnimationRate = RUN_ANIMATION_RATE;
+    sprite.stopJumping?.();
   };
 
   public execute = (

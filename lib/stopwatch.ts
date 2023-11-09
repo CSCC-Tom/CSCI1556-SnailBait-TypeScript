@@ -52,7 +52,7 @@ export class Stopwatch {
     this.paused = false;
   };
 
-  private isPaused = () => {
+  public isPaused = () => {
     return this.paused;
   };
 
@@ -68,7 +68,7 @@ export class Stopwatch {
     return this.running;
   };
 
-  private reset = (now: number) => {
+  public reset = (now?: number) => {
     this.elapsed = 0;
     this.startTime = now ? now : +new Date();
     this.elapsedTime = undefined;

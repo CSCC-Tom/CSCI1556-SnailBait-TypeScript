@@ -1,6 +1,9 @@
+import { AnimationTimer } from "./lib/animationTimer";
+import { BounceBehavior } from "./lib/behaviors/bounce";
 import { CycleBehavior } from "./lib/behaviors/cycle";
 import { JumpBehavior } from "./lib/behaviors/jump";
 import { PaceBehavior } from "./lib/behaviors/pace";
+import { PulseBehavior } from "./lib/behaviors/pulse";
 import { RunBehavior } from "./lib/behaviors/run";
 import { SnailBombMoveBehavior } from "./lib/behaviors/snailbombmove";
 import { SnailShootBehavior } from "./lib/behaviors/snailshoot";
@@ -30,7 +33,7 @@ import {
 import { Sprite, SpriteSheetArtist, SpritesheetCell } from "./lib/sprites";
 import { SnailSprite } from "./lib/sprites/snail";
 import { SnailBombSprite } from "./lib/sprites/snailbomb";
-import { Stopwatch } from "./lib/stopwatch";
+
 class SnailBait {
   private canvas: HTMLCanvasElement = document.getElementById(
     "game-canvas"
@@ -246,7 +249,7 @@ class SnailBait {
         fillStyle: "rgb(150,190,255)",
         opacity: 1.0,
         track: 1,
-        pulsate: false,
+        pulsate: true,
       },
 
       {
@@ -256,7 +259,7 @@ class SnailBait {
         fillStyle: "rgb(150,190,255)",
         opacity: 1.0,
         track: 2,
-        pulsate: false,
+        pulsate: true,
       },
 
       {
@@ -266,7 +269,7 @@ class SnailBait {
         fillStyle: "rgb(250,0,0)",
         opacity: 1.0,
         track: 3,
-        pulsate: false,
+        pulsate: true,
       },
 
       {
@@ -276,7 +279,7 @@ class SnailBait {
         fillStyle: "rgb(80,140,230)",
         opacity: 1.0,
         track: 1,
-        pulsate: false,
+        pulsate: true,
       },
       // Screen 2.......................................................
 
@@ -359,6 +362,7 @@ class SnailBait {
         fillStyle: "aqua",
         opacity: 1.0,
         track: 3,
+        pulsate: false,
       },
 
       // Screen 4.......................................................
@@ -370,6 +374,7 @@ class SnailBait {
         fillStyle: "gold",
         opacity: 1.0,
         track: 1,
+        pulsate: false,
       },
 
       {
@@ -379,6 +384,7 @@ class SnailBait {
         fillStyle: "#2b950a",
         opacity: 1.0,
         track: 2,
+        pulsate: false,
         snail: true,
       },
     ];
@@ -683,7 +689,7 @@ class SnailBait {
       { left: 2360, top: this.TRACK_1_BASELINE - this.COIN_CELLS_HEIGHT },
     ];
     this.sapphireData = [
-      { left: 70, top: this.TRACK_1_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
+      { left: 110, top: this.TRACK_1_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
 
       { left: 880, top: this.TRACK_2_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
 
@@ -694,7 +700,7 @@ class SnailBait {
       { left: 2400, top: this.TRACK_1_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
     ];
     this.rubyData = [
-      { left: 690, top: this.TRACK_1_BASELINE - this.RUBY_CELLS_HEIGHT },
+      { left: 710, top: this.TRACK_1_BASELINE - this.RUBY_CELLS_HEIGHT },
 
       { left: 1700, top: this.TRACK_2_BASELINE - this.RUBY_CELLS_HEIGHT },
 
@@ -819,8 +825,14 @@ class SnailBait {
     this.runner.jumping = false;
     this.runner.track = INITIAL_TRACK;
 
-    this.runner.ascendTimer = new Stopwatch();
-    this.runner.descendTimer = new Stopwatch();
+    this.runner.ascendTimer = new AnimationTimer(
+      this.runner.JUMP_DURATION / 2,
+      AnimationTimer.makeEaseOutEasingFunction(1.1)
+    );
+    this.runner.descendTimer = new AnimationTimer(
+      this.runner.JUMP_DURATION / 2,
+      AnimationTimer.makeEaseInEasingFunction(1.1)
+    );
 
     this.runner.jump = function () {
       if (this.jumping)
@@ -928,23 +940,39 @@ class SnailBait {
   };
 
   private createCoinSprites = () => {
-    const BLUE_SPARKLE_DURATION = 200,
-      BLUE_SPARKLE_INTERVAL = 50,
-      GOLD_SPARKLE_DURATION = 200,
-      GOLD_SPARKLE_INTERVAL = 50;
+    const BLUE_THROB_DURATION = 100,
+      GOLD_THROB_DURATION = 500,
+      BOUNCE_DURATION_BASE = 800, // milliseconds
+      BOUNCE_HEIGHT_BASE = 50; // pixels
     for (let i = 0; i < this.coinData.length; ++i) {
       let coin;
       if (i % 2 === 0) {
         coin = new Sprite(
           "coin",
           new SpriteSheetArtist(this.spritesheet, this.goldCoinCells),
-          [new CycleBehavior(GOLD_SPARKLE_DURATION, GOLD_SPARKLE_INTERVAL)]
+          [
+            new BounceBehavior(
+              BOUNCE_DURATION_BASE + BOUNCE_DURATION_BASE * Math.random(),
+
+              BOUNCE_HEIGHT_BASE + BOUNCE_HEIGHT_BASE * Math.random()
+            ),
+
+            new CycleBehavior(GOLD_THROB_DURATION),
+          ]
         );
       } else {
         coin = new Sprite(
           "coin",
           new SpriteSheetArtist(this.spritesheet, this.blueCoinCells),
-          [new CycleBehavior(BLUE_SPARKLE_DURATION, BLUE_SPARKLE_INTERVAL)]
+          [
+            new BounceBehavior(
+              BOUNCE_DURATION_BASE + BOUNCE_DURATION_BASE * Math.random(),
+
+              BOUNCE_HEIGHT_BASE + BOUNCE_HEIGHT_BASE * Math.random()
+            ),
+
+            new CycleBehavior(BLUE_THROB_DURATION),
+          ]
         );
       }
 
@@ -958,6 +986,8 @@ class SnailBait {
 
   private createPlatformSprites = () => {
     let sprite, pd; // Sprite, Platform data
+    const PULSE_DURATION = 800,
+      PULSE_OPACITY_THRESHOLD = 0.1;
 
     for (let i = 0; i < this.platformData.length; ++i) {
       pd = this.platformData[i];
@@ -974,19 +1004,30 @@ class SnailBait {
       sprite.pulsate = pd.pulsate;
 
       sprite.top = this.calculatePlatformTop(pd.track);
-
+      if (sprite.pulsate) {
+        sprite.behaviors = [
+          new PulseBehavior(PULSE_DURATION, PULSE_OPACITY_THRESHOLD),
+        ];
+      }
       this.platforms.push(sprite);
     }
   };
 
   private createRubySprites = () => {
     const RUBY_SPARKLE_DURATION = 100,
-      RUBY_SPARKLE_INTERVAL = 500;
+      RUBY_BOUNCE_DURATION_BASE = 1000, // milliseconds
+      RUBY_BOUNCE_HEIGHT_BASE = 100; // pixels
     const rubyArtist = new SpriteSheetArtist(this.spritesheet, this.rubyCells);
 
     for (let i = 0; i < this.rubyData.length; ++i) {
       const ruby = new Sprite("ruby", rubyArtist, [
-        new CycleBehavior(RUBY_SPARKLE_DURATION, RUBY_SPARKLE_INTERVAL),
+        new CycleBehavior(RUBY_SPARKLE_DURATION),
+
+        new BounceBehavior(
+          RUBY_BOUNCE_DURATION_BASE + RUBY_BOUNCE_DURATION_BASE * Math.random(),
+
+          RUBY_BOUNCE_HEIGHT_BASE + RUBY_BOUNCE_HEIGHT_BASE * Math.random()
+        ),
       ]);
 
       ruby.width = this.RUBY_CELLS_WIDTH;
@@ -1020,7 +1061,8 @@ class SnailBait {
 
   private createSapphireSprites = () => {
     const SAPPHIRE_SPARKLE_DURATION = 100,
-      SAPPHIRE_SPARKLE_INTERVAL = 300;
+      SAPPHIRE_BOUNCE_DURATION_BASE = 3000, // milliseconds
+      SAPPHIRE_BOUNCE_HEIGHT_BASE = 100; // pixels
     const sapphireArtist = new SpriteSheetArtist(
       this.spritesheet,
       this.sapphireCells
@@ -1028,7 +1070,15 @@ class SnailBait {
 
     for (let i = 0; i < this.sapphireData.length; ++i) {
       const sapphire = new Sprite("sapphire", sapphireArtist, [
-        new CycleBehavior(SAPPHIRE_SPARKLE_DURATION, SAPPHIRE_SPARKLE_INTERVAL),
+        new CycleBehavior(SAPPHIRE_SPARKLE_DURATION),
+
+        new BounceBehavior(
+          SAPPHIRE_BOUNCE_DURATION_BASE +
+            SAPPHIRE_BOUNCE_DURATION_BASE * Math.random(),
+
+          SAPPHIRE_BOUNCE_HEIGHT_BASE +
+            SAPPHIRE_BOUNCE_HEIGHT_BASE * Math.random()
+        ),
       ]);
 
       sapphire.width = this.SAPPHIRE_CELLS_WIDTH;

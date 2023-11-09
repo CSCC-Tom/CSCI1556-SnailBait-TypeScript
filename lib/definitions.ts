@@ -8,8 +8,8 @@ export interface PlatformObject {
   fillStyle: string;
   opacity: number;
   track: PlatformTrack;
+  pulsate: boolean;
   button?: boolean;
-  pulsate?: boolean;
   snail?: boolean;
 }
 export class PlatformArtist {
@@ -43,7 +43,7 @@ export class PlatformSprite extends Sprite implements PlatformObject {
   public width: number;
   public height: number;
   public button?: boolean;
-  public pulsate?: boolean;
+  public pulsate: boolean;
   public snail = undefined;
   constructor(
     spritesheet: HTMLImageElement,
@@ -106,8 +106,8 @@ export type SpriteType =
   | "snail bomb";
 
 export interface IBehavior {
-  pause?: (sprite: Sprite) => void;
-  unpause?: (sprite: Sprite) => void;
+  pause?: (sprite: Sprite, now?: number) => void;
+  unpause?: (sprite: Sprite, now?: number) => void;
   execute: (
     sprite: Sprite,
     now: number,

@@ -1,3 +1,4 @@
+import { AnimationTimer } from "./animationTimer";
 import {
   IBehavior,
   SpriteType,
@@ -8,7 +9,6 @@ import {
 } from "./definitions";
 import { SnailSprite } from "./sprites/snail";
 import { SnailBombSprite } from "./sprites/snailbomb";
-import { Stopwatch } from "./stopwatch";
 
 export enum SpriteDirection {
   LEFT = 1,
@@ -95,8 +95,8 @@ export class Sprite {
   public direction?: SpriteDirection;
   // // Jumping
   public jumping?: boolean;
-  public ascendTimer?: Stopwatch;
-  public descendTimer?: Stopwatch;
+  public ascendTimer?: AnimationTimer;
+  public descendTimer?: AnimationTimer;
   public JUMP_DURATION?: number;
   public JUMP_HEIGHT?: number;
   public verticalLaunchPosition?: number;
