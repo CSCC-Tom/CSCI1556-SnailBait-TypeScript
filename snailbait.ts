@@ -29,16 +29,24 @@ import {
   PlatformTrack,
   ObjectCoordinates,
   IBehavior,
+  WaitABit,
 } from "./lib/definitions";
 import { Sprite, SpriteSheetArtist, SpritesheetCell } from "./lib/sprites";
 import { SnailSprite } from "./lib/sprites/snail";
 import { SnailBombSprite } from "./lib/sprites/snailbomb";
+import { TimeSystem } from "./lib/timeSystem";
 
 class SnailBait {
   private canvas: HTMLCanvasElement = document.getElementById(
     "game-canvas"
   ) as HTMLCanvasElement;
   private context: CanvasRenderingContext2D;
+
+  // Time..............................................................
+
+  private static timeSystem = new TimeSystem(); // See js/timeSystem.js
+  private timeRate = 1.0; // 1.0 is normal speed, 0.5 is 1/2 speed, etc.
+  private TIME_RATE_DURING_TRANSITIONS = 0.2; // percent
 
   // Loading screen....................................................
 
@@ -689,7 +697,7 @@ class SnailBait {
       { left: 2360, top: this.TRACK_1_BASELINE - this.COIN_CELLS_HEIGHT },
     ];
     this.sapphireData = [
-      { left: 110, top: this.TRACK_1_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
+      { left: 70, top: this.TRACK_1_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
 
       { left: 880, top: this.TRACK_2_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
 
@@ -700,7 +708,7 @@ class SnailBait {
       { left: 2400, top: this.TRACK_1_BASELINE - this.SAPPHIRE_CELLS_HEIGHT },
     ];
     this.rubyData = [
-      { left: 710, top: this.TRACK_1_BASELINE - this.RUBY_CELLS_HEIGHT },
+      { left: 690, top: this.TRACK_1_BASELINE - this.RUBY_CELLS_HEIGHT },
 
       { left: 1700, top: this.TRACK_2_BASELINE - this.RUBY_CELLS_HEIGHT },
 
@@ -848,7 +856,7 @@ class SnailBait {
         );
         return;
       }
-      this.ascendTimer.start();
+      this.ascendTimer.start(SnailBait.timeSystem.calculateGameTime());
     };
 
     this.runner.stopJumping = function () {
@@ -865,6 +873,14 @@ class SnailBait {
 
   private equipRunner = () => {
     this.equipRunnerForJumping();
+  };
+
+  private setTimeRate = (rate: number) => {
+    this.timeRate = rate;
+
+    SnailBait.timeSystem.setTransducer(function (now) {
+      return now * snailBait.timeRate;
+    });
   };
 
   private initializeSprites = () => {
@@ -1177,10 +1193,6 @@ class SnailBait {
     this.drawBackground();
     this.updateSprites(now);
     this.drawSprites();
-    /*
-      this.drawRunner();
-      this.drawPlatforms();
-      */
   };
 
   private setPlatformVelocity = () => {
@@ -1190,7 +1202,6 @@ class SnailBait {
   private setOffsets = (now: number) => {
     this.setBackgroundOffset(now);
     this.setSpriteOffsets(now);
-    //this.setPlatformOffset(now);
   };
 
   private setBackgroundOffset = (now: number) => {
@@ -1289,7 +1300,8 @@ class SnailBait {
   };
 
   private calculateFps = (now: number) => {
-    const fps = (1 / (now - this.lastAnimationFrameTime)) * 1000;
+    const fps =
+      (1 / (now - this.lastAnimationFrameTime)) * 1000 * this.timeRate;
 
     if (now - this.lastFpsUpdateTime > 1000) {
       this.lastFpsUpdateTime = now;
@@ -1335,9 +1347,7 @@ class SnailBait {
     this.runner.runAnimationRate = RUN_ANIMATION_RATE;
     this.runner.artist.cells = this.runnerCellsRight;
   };
-  private waitABit = async (msToWait: number): Promise<void> => {
-    await new Promise((resolve) => setTimeout(resolve, msToWait));
-  };
+
   private fadeInElements = async (
     fadeDuration: number,
     args: (HTMLCanvasElement | HTMLImageElement)[]
@@ -1348,7 +1358,7 @@ class SnailBait {
         args[i].style.display = "block";
         args[i].style.opacity = `${timeElapsed / fadeDuration}`;
       }
-      await this.waitABit(100);
+      await WaitABit(100);
       timeElapsed += 100;
     }
     for (let i = 0; i < args.length; i++) {
@@ -1365,7 +1375,7 @@ class SnailBait {
       for (let i = 0; i < args.length; i++) {
         args[i].style.opacity = `${1.0 - timeElapsed / fadeDuration}`;
       }
-      await this.waitABit(100);
+      await WaitABit(100);
       timeElapsed += 100;
     }
     for (let i = 0; i < args.length; i++) {
@@ -1392,10 +1402,14 @@ class SnailBait {
 
   // Animation............................................................
   private pausedReanimateCheck = async () => {
-    await this.waitABit(this.PAUSED_CHECK_INTERVAL);
+    await WaitABit(this.PAUSED_CHECK_INTERVAL);
     window.requestAnimationFrame(this.animate);
   };
   private animate = (now: number) => {
+    // Replace the time passed to this method by the browser
+    // with the time from Snail Bait's time system
+    now = SnailBait.timeSystem.calculateGameTime();
+
     if (this.paused) {
       this.pausedReanimateCheck();
     } else {
@@ -1406,7 +1420,7 @@ class SnailBait {
     }
   };
 
-  private togglePausedStateOfAllBehaviors = () => {
+  private togglePausedStateOfAllBehaviors = (now?: number) => {
     let behavior: IBehavior;
 
     for (let i = 0; i < this.sprites.length; ++i) {
@@ -1417,11 +1431,11 @@ class SnailBait {
 
         if (this.paused) {
           if (behavior.pause) {
-            behavior.pause(sprite);
+            behavior.pause(sprite, now);
           }
         } else {
           if (behavior.unpause) {
-            behavior.unpause(sprite);
+            behavior.unpause(sprite, now);
           }
         }
       }
@@ -1429,11 +1443,11 @@ class SnailBait {
   };
 
   private togglePaused = () => {
-    const now = +new Date();
+    const now = SnailBait.timeSystem.calculateGameTime();
 
     this.paused = !this.paused;
 
-    this.togglePausedStateOfAllBehaviors();
+    this.togglePausedStateOfAllBehaviors(now);
 
     if (this.paused) {
       this.pauseStartTime = now;
@@ -1452,7 +1466,6 @@ class SnailBait {
 
     setTimeout(function () {
       snailBait.startGame();
-      snailBait.gameStarted = true;
     }, LOADING_SCREEN_TRANSITION_DURATION);
   };
   private loadingAnimationLoaded = () => {
@@ -1582,17 +1595,17 @@ class SnailBait {
     if (this.windowHasFocus && this.countdownInProgress)
       this.revealToast("3", 500); // Display 3 for 0.5 seconds
 
-    await this.waitABit(DIGIT_DISPLAY_DURATION);
+    await WaitABit(DIGIT_DISPLAY_DURATION);
 
     if (this.windowHasFocus && this.countdownInProgress)
       this.revealToast("2", 500); // Display 2 for 0.5 seconds
 
-    await this.waitABit(DIGIT_DISPLAY_DURATION);
+    await WaitABit(DIGIT_DISPLAY_DURATION);
 
     if (this.windowHasFocus && this.countdownInProgress)
       this.revealToast("1", 500); // Display 1 for 0.5 seconds
 
-    await this.waitABit(DIGIT_DISPLAY_DURATION);
+    await WaitABit(DIGIT_DISPLAY_DURATION);
 
     if (this.windowHasFocus && this.countdownInProgress) {
       this.togglePaused();
@@ -1608,6 +1621,11 @@ class SnailBait {
     window.addEventListener("focus", this.onWindowFocusEvent);
     this.revealGame();
     this.revealInitialToast();
+
+    SnailBait.timeSystem.start();
+    this.setTimeRate(0.1);
+    this.gameStarted = true;
+
     window.requestAnimationFrame(this.animate);
   };
 

@@ -3,19 +3,19 @@ import { RUN_ANIMATION_RATE } from "../constants";
 import { Sprite } from "../sprites";
 
 export class JumpBehavior extends Behavior {
-  public pause = (sprite: Sprite) => {
+  public pause = (sprite: Sprite, now?: number) => {
     if (sprite.ascendTimer?.isRunning()) {
-      sprite.ascendTimer.pause();
+      sprite.ascendTimer.pause(now);
     } else if (sprite.descendTimer?.isRunning()) {
-      sprite.descendTimer.pause();
+      sprite.descendTimer.pause(now);
     }
   };
 
-  public unpause = (sprite: Sprite) => {
+  public unpause = (sprite: Sprite, now?: number) => {
     if (sprite.ascendTimer?.isRunning()) {
-      sprite.ascendTimer.unpause();
+      sprite.ascendTimer.unpause(now);
     } else if (sprite.descendTimer?.isRunning()) {
-      sprite.descendTimer.unpause();
+      sprite.descendTimer.unpause(now);
     }
   };
 
@@ -23,9 +23,9 @@ export class JumpBehavior extends Behavior {
     return sprite.ascendTimer ? sprite.ascendTimer.isRunning() : false;
   };
 
-  private ascend = (sprite: Sprite) => {
+  private ascend = (sprite: Sprite, now?: number) => {
     const elapsed = sprite.ascendTimer
-      ? sprite.ascendTimer.getElapsedTime()
+      ? sprite.ascendTimer.getElapsedTime(now)
       : 0;
     const jump_duration = sprite.JUMP_DURATION ? sprite.JUMP_DURATION : 0;
     const jump_height = sprite.JUMP_HEIGHT ? sprite.JUMP_HEIGHT : 0;
@@ -36,17 +36,17 @@ export class JumpBehavior extends Behavior {
       deltaY; // Moving up
   };
 
-  private isDoneAscending = (sprite: Sprite) => {
+  private isDoneAscending = (sprite: Sprite, now?: number) => {
     return (
-      (sprite.ascendTimer ? sprite.ascendTimer.getElapsedTime() : 0) >
+      (sprite.ascendTimer ? sprite.ascendTimer.getElapsedTime(now) : 0) >
       (sprite.JUMP_DURATION ? sprite.JUMP_DURATION : 0) / 2
     );
   };
 
-  private finishAscent = (sprite: Sprite) => {
+  private finishAscent = (sprite: Sprite, now?: number) => {
     sprite.jumpApex = sprite.top;
-    sprite.ascendTimer?.stop();
-    sprite.descendTimer?.start();
+    sprite.ascendTimer?.stop(now);
+    sprite.descendTimer?.start(now);
   };
 
   private isDescending = (sprite: Sprite) => {
@@ -54,11 +54,12 @@ export class JumpBehavior extends Behavior {
   };
 
   private descend = (
-    sprite: Sprite //verticalVelocity?: number,
+    sprite: Sprite,
+    now?: number //verticalVelocity?: number,
     //fps?: number
   ) => {
     const elapsed = sprite.descendTimer
-      ? sprite.descendTimer.getElapsedTime()
+      ? sprite.descendTimer.getElapsedTime(now)
       : 0;
     const jump_duration = sprite.JUMP_DURATION ? sprite.JUMP_DURATION : 0;
     const jump_height = sprite.JUMP_HEIGHT ? sprite.JUMP_HEIGHT : 0;
@@ -67,10 +68,10 @@ export class JumpBehavior extends Behavior {
     sprite.top = (sprite.jumpApex ? sprite.jumpApex : 0) + deltaY; // Moving down
   };
 
-  private isDoneDescending = (sprite: Sprite) => {
+  private isDoneDescending = (sprite: Sprite, now?: number) => {
     const jump_duration = sprite.JUMP_DURATION ? sprite.JUMP_DURATION : 0;
     return (
-      (sprite.descendTimer ? sprite.descendTimer.getElapsedTime() : 0) >
+      (sprite.descendTimer ? sprite.descendTimer.getElapsedTime(now) : 0) >
       jump_duration / 2
     );
   };
@@ -80,11 +81,12 @@ export class JumpBehavior extends Behavior {
       : 0;
     sprite.runAnimationRate = RUN_ANIMATION_RATE;
     sprite.stopJumping?.();
+    sprite.runAnimationRate = RUN_ANIMATION_RATE;
   };
 
   public execute = (
-    sprite: Sprite
-    //now: number
+    sprite: Sprite,
+    now?: number
     //fps: number,
     //context: CanvasRenderingContext2D,
     //lastAnimationFrameTime: number
@@ -94,10 +96,10 @@ export class JumpBehavior extends Behavior {
     }
 
     if (this.isAscending(sprite)) {
-      if (!this.isDoneAscending(sprite)) this.ascend(sprite);
-      else this.finishAscent(sprite);
+      if (!this.isDoneAscending(sprite, now)) this.ascend(sprite, now);
+      else this.finishAscent(sprite, now);
     } else if (this.isDescending(sprite)) {
-      if (!this.isDoneDescending(sprite)) this.descend(sprite);
+      if (!this.isDoneDescending(sprite, now)) this.descend(sprite, now);
       else this.finishDescent(sprite);
     }
   };

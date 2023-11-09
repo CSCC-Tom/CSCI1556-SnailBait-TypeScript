@@ -5,8 +5,8 @@ export type AnimationEasingFunction = (percentComplete: number) => number;
 export class AnimationTimer {
   private duration: number;
   private stopwatch: Stopwatch;
-  private easingFunction: AnimationEasingFunction;
-  constructor(duration: number, easingFunction: AnimationEasingFunction) {
+  private easingFunction?: AnimationEasingFunction;
+  constructor(duration?: number, easingFunction?: AnimationEasingFunction) {
     this.easingFunction = easingFunction;
 
     if (duration !== undefined) this.duration = duration;

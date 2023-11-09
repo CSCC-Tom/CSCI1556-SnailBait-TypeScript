@@ -116,3 +116,7 @@ export interface IBehavior {
     lastAnimationFrameTime: number
   ) => void;
 }
+
+export const WaitABit = async (msToWait: number): Promise<void> => {
+  await new Promise((resolve) => setTimeout(resolve, msToWait));
+};
