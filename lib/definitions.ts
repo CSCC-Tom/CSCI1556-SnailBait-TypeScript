@@ -1,3 +1,4 @@
+import { Behavior } from "./behavior";
 import { Sprite } from "./sprites";
 
 export interface ObjectCoordinates {
@@ -40,3 +41,11 @@ export interface IBehavior {
 export const WaitABit = async (msToWait: number): Promise<void> => {
   await new Promise((resolve) => setTimeout(resolve, msToWait));
 };
+
+export type TriggerFunction = (
+  sprite: Sprite,
+  now?: number,
+  fps?: number,
+  lastAnimationFrameTime?: number
+) => boolean;
+export type CallbackFunction = (sprite: Sprite, animator: Behavior) => void;

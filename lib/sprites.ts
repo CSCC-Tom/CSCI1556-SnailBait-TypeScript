@@ -25,6 +25,9 @@ export class SpriteSheetArtist {
   public GetCellIndex = () => {
     return this.cellIndex;
   };
+  public SetCellIndex = (index: number) => {
+    this.cellIndex = index;
+  };
   constructor(spritesheet: HTMLImageElement, cells: SpritesheetCell[]) {
     this.spritesheet = spritesheet;
     this.cells = cells;
@@ -102,7 +105,12 @@ export class Sprite {
   public jumpApex?: number;
   public jump?: () => void;
   public stopJumping?: () => void;
-  public fall?: () => void;
+  // // Falling
+  public falling?: boolean;
+  public fallTimer?: AnimationTimer;
+  public initialVelocityY?: number;
+  public fall?: (now?: number) => void;
+  public stopFalling?: () => void;
 
   public exploding?: boolean;
 
@@ -111,6 +119,11 @@ export class Sprite {
   public bomb?: SnailBombSprite;
   // Snail bombs maintain a reference to their snail
   public snail?: SnailSprite;
+
+  // CELL-SWITCH
+  public originalCells?: SpritesheetCell[];
+  public originalIndex?: number;
+  public switchStartTime?: number;
 
   constructor(
     type: SpriteType,

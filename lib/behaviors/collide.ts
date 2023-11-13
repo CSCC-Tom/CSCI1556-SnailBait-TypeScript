@@ -1,5 +1,4 @@
 import { Behavior } from "../behavior";
-import { RUN_ANIMATION_RATE } from "../constants";
 import { Sprite } from "../sprites";
 import {
   PlatformSprite,
@@ -11,15 +10,19 @@ export class CollideBehavior extends Behavior {
   private readonly timeSystem: TimeSystem;
   private readonly calculatePlatformTop: PlatformTrackToNumberFunction;
   private readonly getAllGameSprites: () => Sprite[];
+  private loseLife: () => void;
+
   constructor(
     time_system: TimeSystem,
     calculate_platform_top: PlatformTrackToNumberFunction,
-    get_all_game_sprites: () => Sprite[]
+    get_all_game_sprites: () => Sprite[],
+    loseLife: () => void
   ) {
     super();
     this.timeSystem = time_system;
     this.calculatePlatformTop = calculate_platform_top;
     this.getAllGameSprites = get_all_game_sprites;
+    this.loseLife = loseLife;
   }
   public isCandidateForCollision = (
     sprite: Sprite,
@@ -63,21 +66,22 @@ export class CollideBehavior extends Behavior {
     sprite: Sprite,
     platform: PlatformSprite
   ) => {
-    if (sprite.descendTimer?.isRunning()) {
+    const isDescending = sprite.descendTimer?.isRunning();
+    sprite.stopJumping?.();
+
+    if (isDescending) {
       sprite.track = platform.track;
       sprite.top = this.calculatePlatformTop(sprite.track) - sprite.height;
-
-      sprite.descendTimer.stop(this.timeSystem.calculateGameTime());
-
-      sprite.jumping = false;
-      sprite.runAnimationRate = RUN_ANIMATION_RATE;
+    } else {
+      // Collided with platform while ascending
+      sprite.fall?.();
     }
   };
-  public processBadGuyCollision = (sprite: Sprite) => {
-    console.warn(
-      `CollideBehavior.processBadGuyCollision(${sprite.type}) is not yet implemented!`
-    );
-    // TODO
+  public processBadGuyCollision = () => {
+    this.loseLife();
+  };
+  public processAssetCollision = (sprite: Sprite) => {
+    sprite.visible = false; // sprite is the asset
   };
   public processCollision = (
     sprite: Sprite,
@@ -92,20 +96,17 @@ export class CollideBehavior extends Behavior {
     } else if (
       "coin" === otherSprite.type ||
       "sapphire" === otherSprite.type ||
-      "ruby" === otherSprite.type ||
-      "snail bomb" === otherSprite.type ||
-      "snail" === otherSprite.type
+      "ruby" === otherSprite.type
     ) {
-      otherSprite.visible = false;
+      this.processAssetCollision(otherSprite);
     }
 
     if (
       "bat" === otherSprite.type ||
       "bee" === otherSprite.type ||
-      "snail bomb" === otherSprite.type ||
-      "snail" === otherSprite.type
+      "snail bomb" === otherSprite.type
     ) {
-      this.processBadGuyCollision(sprite);
+      this.processBadGuyCollision();
     }
   };
   public execute = (

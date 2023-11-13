@@ -1,5 +1,9 @@
 import { Behavior } from "../behavior";
-import { RUN_ANIMATION_RATE } from "../constants";
+import {
+  GRAVITY_FORCE,
+  PIXELS_PER_METER,
+  RUN_ANIMATION_RATE,
+} from "../constants";
 import { Sprite } from "../sprites";
 import { PlatformSprite, platformUnderneath } from "../sprites/platform";
 
@@ -82,7 +86,7 @@ export class JumpBehavior extends Behavior {
       jump_duration / 2
     );
   };
-  private finishDescent = (sprite: Sprite) => {
+  private finishDescent = (sprite: Sprite, now?: number) => {
     sprite.stopJumping?.();
     sprite.runAnimationRate = RUN_ANIMATION_RATE;
 
@@ -90,8 +94,12 @@ export class JumpBehavior extends Behavior {
       sprite.top = sprite.verticalLaunchPosition
         ? sprite.verticalLaunchPosition
         : 0;
-    } else if (sprite.fall) {
-      sprite.fall();
+    } else if (sprite.fall && sprite.descendTimer) {
+      sprite.fall(
+        GRAVITY_FORCE *
+          (sprite.descendTimer.getElapsedTime(now) / 1000) *
+          PIXELS_PER_METER
+      );
     } else {
       console.warn(
         `JumpBehavior.finishDescent(${sprite.type}) -> passed-in sprite did not have a fall function to call!`
