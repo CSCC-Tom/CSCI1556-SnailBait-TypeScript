@@ -11,18 +11,24 @@ export class CollideBehavior extends Behavior {
   private readonly calculatePlatformTop: PlatformTrackToNumberFunction;
   private readonly getAllGameSprites: () => Sprite[];
   private loseLife: () => void;
+  private explode: (sprite: Sprite) => void;
+  private shake: () => void;
 
   constructor(
     time_system: TimeSystem,
     calculate_platform_top: PlatformTrackToNumberFunction,
     get_all_game_sprites: () => Sprite[],
-    loseLife: () => void
+    lose_life: () => void,
+    explode: (sprite: Sprite) => void,
+    shake: () => void
   ) {
     super();
     this.timeSystem = time_system;
     this.calculatePlatformTop = calculate_platform_top;
     this.getAllGameSprites = get_all_game_sprites;
-    this.loseLife = loseLife;
+    this.loseLife = lose_life;
+    this.explode = explode;
+    this.shake = shake;
   }
   public isCandidateForCollision = (
     sprite: Sprite,
@@ -77,7 +83,9 @@ export class CollideBehavior extends Behavior {
       sprite.fall?.();
     }
   };
-  public processBadGuyCollision = () => {
+  public processBadGuyCollision = (sprite: Sprite) => {
+    this.explode(sprite);
+    this.shake();
     this.loseLife();
   };
   public processAssetCollision = (sprite: Sprite) => {
@@ -106,7 +114,14 @@ export class CollideBehavior extends Behavior {
       "bee" === otherSprite.type ||
       "snail bomb" === otherSprite.type
     ) {
-      this.processBadGuyCollision();
+      this.processBadGuyCollision(otherSprite);
+    } else if ("button" === otherSprite.type) {
+      if (
+        (sprite.jumping && sprite.descendTimer?.isRunning()) ||
+        sprite.falling
+      ) {
+        otherSprite.detonating = true;
+      }
     }
   };
   public execute = (

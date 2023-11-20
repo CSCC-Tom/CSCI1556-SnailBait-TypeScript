@@ -125,6 +125,9 @@ export class Sprite {
   public originalIndex?: number;
   public switchStartTime?: number;
 
+  // BLUE-BUTTON DETONATE
+  public detonating?: boolean;
+
   constructor(
     type: SpriteType,
     artist: SpriteSheetArtist,

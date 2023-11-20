@@ -1,3 +1,5 @@
+import { PlatformTrack } from "./sprites/platform";
+
 // Constants............................................................
 export const SHORT_DELAY = 50; // milliseconds
 export const TRANSPARENT = "0";
@@ -9,6 +11,9 @@ export const PLATFORM_STROKE_WIDTH = 2;
 export const PLATFORM_STROKE_STYLE = "rgb(0,0,0)"; // black
 export const RUNNER_EXPLOSION_DURATION = 500;
 export const BAD_GUYS_EXPLOSION_DURATION = 1500;
+
+export const RUNNER_LEFT = 50;
+export const STARTING_RUNNER_TRACK: PlatformTrack = 1;
 
 // Background width and height.........................................
 
